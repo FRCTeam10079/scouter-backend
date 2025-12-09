@@ -1,5 +1,13 @@
-import Fastify from "fastify";
+import fastify from "fastify";
 
-const fastify = Fastify();
+const server = fastify();
 
-fastify.listen({ port: 8000 });
+export default server;
+
+server.listen({ port: 8000 }, (err, address) => {
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  }
+  console.log(`Server listening at ${address}`);
+});

@@ -3,25 +3,35 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "test": "tsx --test src/**/*.test.ts",
     "build": "tsc",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.13.1",
+  "author": "FRC Team 10079",
+  "packageManager": "pnpm@10.24.0",
   "devDependencies": {
-    "@types/node": "^24.10.0",
-    "@typescript-eslint/eslint-plugin": "^8.46.4",
-    "@typescript-eslint/parser": "^8.46.4",
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
     "eslint": "^9.39.1",
-    "prisma": "^6.19.0",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "prisma": "^7.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.1"
   },
   "dependencies": {
-    "fastify": "^5.6.2"
+    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/client": "^7.1.0",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.2",
+    "pg": "^8.16.3"
   }
 }
