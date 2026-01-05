@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/db/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  username      String         @unique @db.VarChar(30)
+  passwordHash  String         @db.VarChar(100)
+  refreshTokens RefreshToken[]
+  firstName     String         @db.VarChar(50)
+  lastName      String         @db.VarChar(50)
+  reports       Report[]
+}
+
+model RefreshToken {
+  value     String   @id @db.Uuid @default(dbgenerated("gen_random_uuid()"))
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  expiresAt DateTime
+}
+
+enum MatchType {
+  PRACTICE
+  QUALIFICATION
+  PLAYOFF
+}
+
+model Report {
+  id                     Int       @id @default(autoincrement())
+  user                   User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId                 Int?
+  createdAt              DateTime
+  eventCode              String    @db.Char(5)
+  matchType              MatchType         
+  matchNumber            Int       @db.SmallInt
+  teamNumber             Int       @db.SmallInt
+  notes                  String    @db.VarChar(400)
+  autoNotes              String    @db.VarChar(400)
+  didRobotMoveDuringAuto Boolean
+  teleopNotes            String    @db.VarChar(400)
+  endgameNotes           String    @db.VarChar(400)
+  // TODO: Add data after kickoff.
+}
