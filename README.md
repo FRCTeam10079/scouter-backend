@@ -5,7 +5,7 @@ Backend server for Scouter (scouting app) that runs on port 8000.
 ## Scripts
 
 ```
-pnpm setup
+pnpm run setup
 ```
 ```
 node setup.js

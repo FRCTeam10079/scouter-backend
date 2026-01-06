@@ -1,5 +1,3 @@
-// TODO: Test this script.
-
 import { execSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
@@ -18,7 +16,8 @@ try {
 execSync("pnpm install");
 
 const rl = readline.createInterface(process.stdin, process.stdout);
-const databaseUrl = await rl.question("Enter your Postgres database url: ");
+const databaseUrl = await rl.question("Enter your Postgres database URL: ");
+rl.close();
 
 const envFileText = `\
 NODE_ENV=${isProduction ? "production" : "development"}
@@ -34,11 +33,12 @@ if (isProduction) {
   execSync("pnpm prisma migrate dev");
 }
 
-execSync("pnpm prisma db seed");
 execSync("pnpm prisma generate");
 
 if (isProduction) {
   execSync("pnpm build");
+} else {
+  execSync("pnpm prisma db seed");
 }
 
 console.log("Finished");
