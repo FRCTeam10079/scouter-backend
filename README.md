@@ -148,7 +148,7 @@ Creates a scouting report. A 201 status code is always returned. The following r
 
 ### GET /reports
 
-Returns a list of reports. A 200 status code is always returned. Query parameters can be used to filter the results. The following schema is used for query parameters:
+Returns a list of reports. Query parameters can be used to filter the results. The following schema is used for query parameters:
 ```ts
 {
   userId?: number, // integer
@@ -159,6 +159,18 @@ Returns a list of reports. A 200 status code is always returned. Query parameter
   robotMovedDuringAuto?: boolean,
   take: number, // integer - return N reports
   skip: number, // integer - skip first N reports
+}
+```
+A 200 status code is always returned with the following response body:
+```ts
+{
+  id: number,
+  teamNumber: number,
+  user: {
+    id: number,
+    firstName: string,
+    lastName: string,
+  } | null,
 }[]
 ```
 
@@ -191,7 +203,7 @@ Logs the user in. If the user does not exist, a 401 status code is returned with
 ```ts
 {
   username: string, // 1-30 characters
-  password: string,
+  password: string, // 1-50 characters
 }
 ```
 
