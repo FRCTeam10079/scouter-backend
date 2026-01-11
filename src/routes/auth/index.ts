@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import Type from "typebox";
+import { type Static, Type } from "typebox";
 import { Response4xx } from "@/.";
 import prisma from "@/db";
 
@@ -17,9 +17,24 @@ export async function authenticate(req: FastifyRequest, reply: FastifyReply) {
   }
 }
 
+export const RefreshToken = Type.String({ format: "uuid" });
+
+export const AuthTokensResponse = {
+  201: Type.Object({
+    accessToken: Type.String(),
+    refreshToken: RefreshToken,
+  }),
+  "4xx": Response4xx,
+};
+
+export type AuthTokensResponse = Static<(typeof AuthTokensResponse)[201]>;
+
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-export async function issueAuthTokens(app: FastifyInstance, userId: number) {
+export async function issueAuthTokens(
+  app: FastifyInstance,
+  userId: number
+): Promise<AuthTokensResponse> {
   const refreshToken = await prisma.refreshToken.create({
     data: {
       userId,
@@ -32,13 +47,3 @@ export async function issueAuthTokens(app: FastifyInstance, userId: number) {
     refreshToken: refreshToken.value,
   };
 }
-
-export const RefreshToken = Type.String({ format: "uuid" });
-
-export const AuthTokensResponse = {
-  201: Type.Object({
-    accessToken: Type.String(),
-    refreshToken: RefreshToken,
-  }),
-  "4xx": Response4xx,
-};

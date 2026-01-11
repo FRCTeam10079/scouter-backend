@@ -5,7 +5,7 @@ import prisma, { TestUser } from "@/db";
 import { issueAuthTokens } from "@/routes/auth";
 
 test("issueAuthTokens() returns valid authentication tokens", async () => {
-  const app = createApp();
+  const app = await createApp();
   await app.ready();
   const storedUserId = await TestUser.getId();
   const tokens = await issueAuthTokens(app, storedUserId);

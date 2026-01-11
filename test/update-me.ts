@@ -8,7 +8,7 @@ import { issueAuthTokens } from "@/routes/auth";
 const UPDATES = { firstName: "Pranav", password: "mcdonalds" };
 
 test("PATCH /me updates the user", async () => {
-  const app = createApp();
+  const app = await createApp();
   await app.ready();
   const userId = await TestUser.getId();
   const { accessToken } = await issueAuthTokens(app, userId);

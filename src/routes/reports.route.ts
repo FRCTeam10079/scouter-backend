@@ -3,24 +3,26 @@ import {
   Type,
 } from "@fastify/type-provider-typebox";
 import prisma, { Report, User } from "@/db";
-import { MatchType } from "@/db/prisma/enums";
+import { MatchType, TrenchOrBump } from "@/db/prisma/enums";
 
 const ReportsSchema = {
   querystring: Type.Object({
-    userId: Type.Optional(Type.Integer()),
-    year: Type.Optional(Type.Integer({ minimum: 2000, maximum: 3000 })),
+    userId: Type.Optional(Type.Integer({ minimum: 0 })),
     eventCode: Type.Optional(Report.EventCode),
     matchType: Type.Optional(Type.Enum(MatchType)),
     teamNumber: Type.Optional(Report.TeamNumber),
-    robotMovedDuringAuto: Type.Optional(Type.Boolean()),
-    take: Type.Integer(),
-    skip: Type.Integer(),
+    trenchOrBump: Type.Optional(Type.Enum(TrenchOrBump)),
+    noMinorFouls: Type.Optional(Type.Boolean()),
+    noMajorFouls: Type.Optional(Type.Boolean()),
+    autoMovement: Type.Optional(Type.Boolean()),
+    take: Type.Integer({ minimum: 0 }),
+    skip: Type.Integer({ minimum: 0 }),
   }),
   response: {
     200: Type.Array(
       Type.Object({
         id: Type.Integer(),
-        teamNumber: Type.Integer(),
+        teamNumber: Report.TeamNumber,
         user: Type.Union([User.Display, Type.Null()]),
       })
     ),
@@ -29,21 +31,16 @@ const ReportsSchema = {
 
 const reports: FastifyPluginAsyncTypebox = async (app) => {
   app.get("/reports", { schema: ReportsSchema }, async (req) => {
-    const createdAt =
-      req.query.year === undefined
-        ? undefined
-        : {
-            gte: new Date(req.query.year, 0),
-            lt: new Date(req.query.year + 1, 0),
-          };
     return await prisma.report.findMany({
       where: {
         userId: req.query.userId,
-        createdAt,
         eventCode: req.query.eventCode,
         matchType: req.query.matchType,
         teamNumber: req.query.teamNumber,
-        didRobotMoveDuringAuto: req.query.robotMovedDuringAuto,
+        trenchOrBump: req.query.trenchOrBump,
+        minorFouls: req.query.noMinorFouls ? 0 : undefined,
+        majorFouls: req.query.noMajorFouls ? 0 : undefined,
+        autoMovement: req.query.autoMovement,
       },
       select: {
         id: true,

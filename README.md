@@ -18,7 +18,7 @@ pnpm setup:prod
 ```
 node setup.js --prod
 ```
-Does the same as `pnpm setup` and `node setup.js`, but additionally builds the project for production.
+Does the same as `pnpm run setup` and `node setup.js`, but additionally builds the project for production.
 
 ```
 pnpm dev
@@ -99,7 +99,7 @@ Deletes the user's account. A 204 status code is always returned.
 Returns a list of users. A 200 status code is always returned with the following response body:
 ```ts
 {
-  id: number,
+  id: number, // unsigned integer
   firstName: string,
   lastName: string,
 }[]
@@ -111,20 +111,38 @@ Returns a scouting report. `id` should be an integer. If the report does not exi
 ```ts
 {
   user: {
-    id: number,
+    id: number, // unsigned integer
     firstName: string,
     lastName: string,
   } | null,
-  createdAt: string,
+  createdAt: string, // ISO 8601 date-time
   eventCode: string,
   matchType: "PRACTICE" | "QUALIFICATION" | "PLAYOFF",
-  matchNumber: number,
-  teamNumber: number,
+  matchNumber: number, // integer
+  teamNumber: number, // integer 1-20000
   notes: string,
-  autoNotes: string,
-  didRobotMoveDuringAuto: boolean,
-  teleopNotes: string,
-  endgameNotes: string,
+  trenchOrBump: "TRENCH" | "BUMP",
+  minorFouls: number, // integer
+  majorFouls: number, // integer
+  auto: {
+    notes: string,
+    movement: boolean,
+    hubScore: number, // unsigned integer
+    hubMisses: number, // unsigned integer
+    level1: boolean,
+  },
+  teleop: {
+    notes: string,
+    hubScore: number, // unsigned integer
+    hubMisses: number, // unsigned integer
+    level: number, // unsigned integer
+  },
+  endgame: {
+    notes: string,
+    hubScore: number, // unsigned integer
+    hubMisses: number, // unsigned integer
+    level: number, // unsigned integer
+  },
 }
 ```
 
@@ -133,16 +151,34 @@ Returns a scouting report. `id` should be an integer. If the report does not exi
 Creates a scouting report. A 201 status code is always returned. The following request body schema is used:
 ```ts
 {
-  createdAt: string, // ISO date-time
+  createdAt: string, // ISO 8601 date-time
   eventCode: string, // 5 characters
   matchType: "PRACTICE" | "QUALIFICATION" | "PLAYOFF",
-  matchNumber: number, // 1-200
-  teamNumber: number, // 1-20000
+  matchNumber: number, // integer 1-200
+  teamNumber: number, // integer 1-20000
   notes: string, // <=400 characters
-  autoNotes: string, // <=400 characters
-  didRobotMoveDuringAuto: boolean,
-  teleopNotes: string, // <=400 characters
-  endgameNotes: string, // <=400 characters
+  trenchOrBump: "TRENCH" | "BUMP",
+  minorFouls: number, // unsigned integer
+  majorFouls: number, // unsigned integer
+  auto: {
+    notes: string, // <=400 characters
+    movement: boolean,
+    hubScore: number, // unsigned integer
+    hubMisses: number, // unsigned integer
+    level1: boolean,
+  },
+  teleop: {
+    notes: string, // <=400 characters
+    hubScore: number, // unsigned integer
+    hubMisses: number, // unsigned integer
+    level: number, // unsigned integer
+  },
+  endgame: {
+    notes: string, // <=400 characters
+    hubScore: number, // unsigned integer
+    hubMisses: number, // unsigned integer
+    level: number, // unsigned integer
+  },
 }
 ```
 
@@ -151,23 +187,25 @@ Creates a scouting report. A 201 status code is always returned. The following r
 Returns a list of reports. Query parameters can be used to filter the results. The following schema is used for query parameters:
 ```ts
 {
-  userId?: number, // integer
-  year?: number, // 2000-3000
+  userId?: number, // unsigned integer
   eventCode?: string, // 5 characters
   matchType?: "PRACTICE" | "QUALIFICATION" | "PLAYOFF",
   teamNumber?: number, // 1-20000
-  robotMovedDuringAuto?: boolean,
-  take: number, // integer - return N reports
-  skip: number, // integer - skip first N reports
+  trenchOrBump?: "TRENCH" | "BUMP",
+  noMinorFouls?: boolean,
+  noMajorFouls?: boolean,
+  autoMovement? boolean,
+  take: number, // unsigned integer - return N reports
+  skip: number, // unsigned integer - skip first N reports
 }
 ```
 A 200 status code is always returned with the following response body:
 ```ts
 {
-  id: number,
-  teamNumber: number,
+  id: number, // unsigned integer
+  teamNumber: number, // integer 1-20000
   user: {
-    id: number,
+    id: number, // unsigned integer
     firstName: string,
     lastName: string,
   } | null,
@@ -179,8 +217,8 @@ A 200 status code is always returned with the following response body:
 All authentication routes start with **/auth** and upon success, return a 201 status code with the following response body, except for **/auth/logout**:
 ```ts
 {
-  accessToken: string,
-  refreshToken: string,
+  accessToken: string, // JWT
+  refreshToken: string, // UUID
 }
 ```
 

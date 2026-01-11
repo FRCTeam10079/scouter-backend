@@ -7,7 +7,7 @@ import { AuthTokensResponse, issueAuthTokens } from "@/routes/auth";
 
 const AuthTokensValidator = TypeCompiler.Compile(AuthTokensResponse[201]);
 
-const app = createApp();
+const app = await createApp();
 
 async function request(refreshToken: string) {
   return await app.inject({

@@ -3,7 +3,7 @@ import { after, describe, it } from "node:test";
 import createApp from "@/app";
 import { TestUser } from "@/db";
 
-const app = createApp();
+const app = await createApp();
 
 async function request(username: string, password: string) {
   return await app.inject({

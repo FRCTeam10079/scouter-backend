@@ -11,8 +11,10 @@ CREATE TABLE "Report" (
     "matchNumber" SMALLINT NOT NULL,
     "teamNumber" SMALLINT NOT NULL,
     "notes" VARCHAR(400) NOT NULL,
+    "minorFouls" SMALLINT NOT NULL,
+    "majorFouls" SMALLINT NOT NULL,
     "autoNotes" VARCHAR(400) NOT NULL,
-    "didRobotMoveDuringAuto" BOOLEAN NOT NULL,
+    "autoMovement" BOOLEAN NOT NULL,
     "teleopNotes" VARCHAR(400) NOT NULL,
     "endgameNotes" VARCHAR(400) NOT NULL,
 

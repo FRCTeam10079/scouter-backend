@@ -12,7 +12,7 @@ const NEW_USER = {
   lastName: "Gibberjabber",
 };
 
-const app = createApp();
+const app = await createApp();
 
 describe("POST /auth/sign-up", () => {
   it("Creates a new user", async () => {

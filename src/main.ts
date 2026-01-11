@@ -12,7 +12,7 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-const app = createApp({
+const app = await createApp({
   logger: process.env.NODE_ENV === "development" && {
     transport: {
       // Pretty logging
