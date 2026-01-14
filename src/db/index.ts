@@ -1,6 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import Type from "typebox";
-import { PrismaClient } from "./prisma/client";
+import { Level, PrismaClient } from "./prisma/client";
 
 const adapter = new PrismaPg({
   connectionString: `${process.env.DATABASE_URL}`,
@@ -21,10 +21,11 @@ export namespace User {
   });
 }
 
+export const TeamNumber = Type.Integer({ minimum: 1, maximum: 20000 });
+
 export namespace Report {
   export const EventCode = Type.String({ minLength: 5, maxLength: 5 });
   export const MatchNumber = Type.Integer({ minimum: 1, maximum: 200 });
-  export const TeamNumber = Type.Integer({ minimum: 1, maximum: 20000 });
   export const Notes = Type.String({ maxLength: 400 });
 
   export const Auto = Type.Object({
@@ -39,7 +40,7 @@ export namespace Report {
     notes: Notes,
     hubScore: Type.Integer({ minimum: 0 }),
     hubMisses: Type.Integer({ minimum: 0 }),
-    level: Type.Integer({ minimum: 0, maximum: 3 }),
+    level: Type.Union([Type.Enum(Level), Type.Null()]),
   });
 }
 

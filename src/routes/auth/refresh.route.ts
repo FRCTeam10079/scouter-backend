@@ -1,4 +1,4 @@
-import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import type App from "@/app";
 import prisma from "@/db";
 import * as auth from ".";
 
@@ -7,7 +7,7 @@ const RefreshSchema = {
   response: auth.AuthTokensResponse,
 };
 
-const refresh: FastifyPluginAsyncTypebox = async (app) => {
+export default async function refresh(app: App) {
   app.post("/refresh", { schema: RefreshSchema }, async (req, reply) => {
     const storedRefreshToken = await prisma.refreshToken.findUnique({
       where: { value: req.body },
@@ -24,6 +24,4 @@ const refresh: FastifyPluginAsyncTypebox = async (app) => {
       .code(201)
       .send(await auth.issueAuthTokens(app, storedRefreshToken.userId));
   });
-};
-
-export default refresh;
+}

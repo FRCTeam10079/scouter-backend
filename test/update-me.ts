@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as argon2 from "@node-rs/argon2";
-import createApp from "@/app";
+import { createApp } from "@/app";
 import prisma, { TestUser } from "@/db";
 import { issueAuthTokens } from "@/routes/auth";
 

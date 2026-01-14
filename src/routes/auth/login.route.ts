@@ -1,8 +1,6 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
 import * as argon2 from "@node-rs/argon2";
+import Type from "typebox";
+import type App from "@/app";
 import prisma, { User } from "@/db";
 import { AuthTokensResponse, issueAuthTokens } from ".";
 
@@ -14,7 +12,7 @@ const LoginSchema = {
   response: AuthTokensResponse,
 };
 
-const login: FastifyPluginAsyncTypebox = async (app) => {
+export default async function login(app: App) {
   app.post("/login", { schema: LoginSchema }, async (req, reply) => {
     const user = await prisma.user.findUnique({
       where: { username: req.body.username },
@@ -28,6 +26,4 @@ const login: FastifyPluginAsyncTypebox = async (app) => {
     }
     reply.code(201).send(await issueAuthTokens(app, user.id));
   });
-};
-
-export default login;
+}

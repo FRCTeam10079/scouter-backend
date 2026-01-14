@@ -1,7 +1,5 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
+import Type from "typebox";
+import type App from "@/app";
 import prisma from "@/db";
 import { RefreshToken } from ".";
 
@@ -12,11 +10,9 @@ const LogoutSchema = {
   },
 };
 
-const refresh: FastifyPluginAsyncTypebox = async (app) => {
+export default async function logout(app: App) {
   app.delete("/logout", { schema: LogoutSchema }, async (req, reply) => {
     await prisma.refreshToken.delete({ where: { value: req.body } });
     reply.code(204).send();
   });
-};
-
-export default refresh;
+}

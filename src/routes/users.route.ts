@@ -1,23 +1,19 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import { Response4xx } from "@/.";
+import Type from "typebox";
+import type App from "@/app";
 import prisma, { User } from "@/db";
+import ErrorResponse from "@/error-response";
 
 const UserSchema = {
   response: {
     200: Type.Array(User.Display),
-    "4xx": Response4xx,
+    "4xx": ErrorResponse,
   },
 };
 
-const user: FastifyPluginAsyncTypebox = async (app) => {
+export default async function user(app: App) {
   app.get("/users", { schema: UserSchema }, () => {
     return prisma.user.findMany({
       select: { id: true, firstName: true, lastName: true },
     });
   });
-};
-
-export default user;
+}

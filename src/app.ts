@@ -3,10 +3,26 @@ import fastifyAutoload from "@fastify/autoload";
 import fastifyJwt from "@fastify/jwt";
 import fastifyMultipart from "@fastify/multipart";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
-import fastify, { type FastifyServerOptions } from "fastify";
+import fastify, {
+  type FastifyBaseLogger,
+  type FastifyInstance,
+  type FastifyServerOptions,
+  type RawReplyDefaultExpression,
+  type RawRequestDefaultExpression,
+  type RawServerDefault,
+} from "fastify";
 import { authenticate } from "./routes/auth";
 
-export default async function createApp(options: FastifyServerOptions = {}) {
+type App = FastifyInstance<
+  RawServerDefault,
+  RawRequestDefaultExpression,
+  RawReplyDefaultExpression,
+  FastifyBaseLogger,
+  TypeBoxTypeProvider
+>;
+export type { App as default };
+
+export async function createApp(options?: FastifyServerOptions): Promise<App> {
   if (!process.env.JWT_SECRET) {
     console.error("JWT_SECRET environment variable has not been set");
     process.exit(1);

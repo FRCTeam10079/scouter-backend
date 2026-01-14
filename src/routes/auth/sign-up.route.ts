@@ -1,8 +1,6 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
 import * as argon2 from "@node-rs/argon2";
+import Type from "typebox";
+import type App from "@/app";
 import prisma, { User } from "@/db";
 import { AuthTokensResponse, issueAuthTokens } from ".";
 
@@ -19,7 +17,7 @@ const SignUpSchema = {
 
 export const TEAM_PASSWORD = "AlexaIsOurScoutingLead!";
 
-const signUp: FastifyPluginAsyncTypebox = async (app) => {
+export default async function signUp(app: App) {
   app.post("/sign-up", { schema: SignUpSchema }, async (req, reply) => {
     if (req.body.teamPassword !== TEAM_PASSWORD) {
       return reply.code(401).send({ code: "INCORRECT_TEAM_PASSWORD" });
@@ -41,6 +39,4 @@ const signUp: FastifyPluginAsyncTypebox = async (app) => {
     });
     reply.code(201).send(await issueAuthTokens(app, user.id));
   });
-};
-
-export default signUp;
+}

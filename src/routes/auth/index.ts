@@ -1,7 +1,13 @@
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
+    payload: { id: number };
+  }
+}
+
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { type Static, Type } from "typebox";
-import { Response4xx } from "@/.";
 import prisma from "@/db";
+import ErrorResponse from "@/error-response";
 
 /** Verifies that the request has a valid bearer token in the Authentication
  * header. Upon success, `req.user.id` is set to the user's id. Upon failure,
@@ -24,7 +30,7 @@ export const AuthTokensResponse = {
     accessToken: Type.String(),
     refreshToken: RefreshToken,
   }),
-  "4xx": Response4xx,
+  "4xx": ErrorResponse,
 };
 
 export type AuthTokensResponse = Static<(typeof AuthTokensResponse)[201]>;
@@ -33,7 +39,7 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function issueAuthTokens(
   app: FastifyInstance,
-  userId: number
+  userId: number,
 ): Promise<AuthTokensResponse> {
   const refreshToken = await prisma.refreshToken.create({
     data: {

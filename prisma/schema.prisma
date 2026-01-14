@@ -24,17 +24,6 @@ model RefreshToken {
   expiresAt DateTime
 }
 
-enum MatchType {
-  PRACTICE
-  QUALIFICATION
-  PLAYOFF
-}
-
-enum TrenchOrBump {
-  TRENCH
-  BUMP
-}
-
 model Report {
   id               Int          @id @default(autoincrement())
   user             User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -56,9 +45,27 @@ model Report {
   teleopNotes      String       @db.VarChar(400)
   teleopHubScore   Int          @db.SmallInt
   teleopHubMisses  Int          @db.SmallInt
-  teleopLevel      Int          @db.SmallInt
+  teleopLevel      Level?
   endgameNotes     String       @db.VarChar(400)
   endgameHubScore  Int          @db.SmallInt
   endgameHubMisses Int          @db.SmallInt
-  endgameLevel     Int          @db.SmallInt
+  endgameLevel     Level?
+}
+
+enum MatchType {
+  PRACTICE
+  QUALIFICATION
+  PLAYOFF
+}
+
+enum TrenchOrBump {
+  TRENCH
+  BUMP
+}
+
+enum Level {
+  ONE
+  TWO
+  THREE
+  FAILED
 }

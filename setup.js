@@ -17,12 +17,14 @@ execSync("pnpm install");
 
 const rl = readline.createInterface(process.stdin, process.stdout);
 const databaseUrl = await rl.question("Enter your Postgres database URL: ");
+const openaiApiKey = await rl.question("Enter your OpenAI API key: ");
 rl.close();
 
 const envFileText = `\
 NODE_ENV=${isProduction ? "production" : "development"}
 DATABASE_URL=${databaseUrl}
 JWT_SECRET=${randomBytes(32).toString("hex")}
+OPENAI_API_KEY=${openaiApiKey}
 `;
 
 fs.writeFileSync(".env", envFileText);

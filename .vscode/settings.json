@@ -5,8 +5,7 @@
     "editor.defaultFormatter": "Prisma.prisma"
   },
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
+    "source.fixAll.biome": "explicit"
   },
   "editor.tabSize": 2,
   "typescript.tsdk": "node_modules/typescript/lib"

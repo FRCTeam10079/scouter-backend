@@ -1,10 +1,8 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
 import * as argon2 from "@node-rs/argon2";
-import { Response4xx } from "@/.";
+import Type from "typebox";
+import type App from "@/app";
 import prisma, { User } from "@/db";
+import ErrorResponse from "@/error-response";
 
 const MeGetSchema = {
   response: {
@@ -13,7 +11,7 @@ const MeGetSchema = {
       firstName: Type.String(),
       lastName: Type.String(),
     }),
-    "4xx": Response4xx,
+    "4xx": ErrorResponse,
   },
 };
 
@@ -26,7 +24,7 @@ const MePatchSchema = {
   }),
   response: {
     204: Type.Null(),
-    "4xx": Response4xx,
+    "4xx": ErrorResponse,
   },
 };
 
@@ -36,7 +34,7 @@ const MeDeleteSchema = {
   },
 };
 
-const me: FastifyPluginAsyncTypebox = async (app) => {
+export default async function me(app: App) {
   app.get("/me", { schema: MeGetSchema }, async (req, reply) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
@@ -69,6 +67,4 @@ const me: FastifyPluginAsyncTypebox = async (app) => {
     await prisma.user.delete({ where: { id: req.user.id } });
     reply.code(204).send();
   });
-};
-
-export default me;
+}

@@ -32,6 +32,9 @@ importers:
       fastify:
         specifier: ^5.6.2
         version: 5.6.2
+      openai:
+        specifier: ^6.16.0
+        version: 6.16.0(zod@4.3.5)
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -47,6 +50,9 @@ importers:
       typebox:
         specifier: ^1.0.64
         version: 1.0.64
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.5
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.3.10
@@ -1076,6 +1082,18 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
+  openai@6.16.0:
+    resolution: {integrity: sha512-fZ1uBqjFUjXzbGc35fFtYKEOxd20kd9fDpFeqWtsOZWiubY8CZ1NAlXHW3iathaFvqmNtCWMIsosCuyeI7Joxg==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+
   path-key@3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
@@ -1413,6 +1431,9 @@ packages:
 
   zeptomatch@2.0.2:
     resolution: {integrity: sha512-H33jtSKf8Ijtb5BW6wua3G5DhnFjbFML36eFu+VdOoVY4HD9e7ggjqdM6639B+L87rjnR6Y+XeRzBXZdy52B/g==}
+
+  zod@4.3.5:
+    resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
 
 snapshots:
 
@@ -2337,6 +2358,10 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
+  openai@6.16.0(zod@4.3.5):
+    optionalDependencies:
+      zod: 4.3.5
+
   path-key@3.1.1: {}
 
   path-type@4.0.0: {}
@@ -2666,3 +2691,5 @@ snapshots:
   zeptomatch@2.0.2:
     dependencies:
       grammex: 3.1.12
+
+  zod@4.3.5: {}

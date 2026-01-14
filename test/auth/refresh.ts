@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import TypeCompiler from "typebox/compile";
-import createApp from "@/app";
+import { createApp } from "@/app";
 import { TestUser } from "@/db";
 import { AuthTokensResponse, issueAuthTokens } from "@/routes/auth";
 

@@ -10,7 +10,7 @@ pnpm run setup
 ```
 node setup.js
 ```
-Sets up the environment by installing PNPM if necessary, installing all packages, creating a .env file, and updating the database. This should be run after cloning the repository.
+Sets up the environment by installing PNPM if necessary, installing all packages, creating a .env file, and updating the database. This should be run after cloning the repository. PostgreSQL should already be installed, and you should have an OpenAI API key.
 
 ```
 pnpm setup:prod
@@ -135,13 +135,13 @@ Returns a scouting report. `id` should be an integer. If the report does not exi
     notes: string,
     hubScore: number, // unsigned integer
     hubMisses: number, // unsigned integer
-    level: number, // unsigned integer
+    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
   },
   endgame: {
     notes: string,
     hubScore: number, // unsigned integer
     hubMisses: number, // unsigned integer
-    level: number, // unsigned integer
+    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
   },
 }
 ```
@@ -171,13 +171,13 @@ Creates a scouting report. A 201 status code is always returned. The following r
     notes: string, // <=400 characters
     hubScore: number, // unsigned integer
     hubMisses: number, // unsigned integer
-    level: number, // unsigned integer
+    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
   },
   endgame: {
     notes: string, // <=400 characters
     hubScore: number, // unsigned integer
     hubMisses: number, // unsigned integer
-    level: number, // unsigned integer
+    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
   },
 }
 ```
@@ -195,6 +195,7 @@ Returns a list of reports. Query parameters can be used to filter the results. T
   noMinorFouls?: boolean,
   noMajorFouls?: boolean,
   autoMovement? boolean,
+  autoLevel1?: boolean,
   take: number, // unsigned integer - return N reports
   skip: number, // unsigned integer - skip first N reports
 }
@@ -210,6 +211,22 @@ A 200 status code is always returned with the following response body:
     lastName: string,
   } | null,
 }[]
+```
+
+### GET /rankings
+
+Returns team rankings using the OpenAI API. If the OpenAI API fails, a 502 status code is returned with the following response body:
+```ts
+{ code: "OPENAI_API_FAILED" }
+```
+Upon success, a 200 status code is returned with the following response body:
+```ts
+{
+  teamNumber: number, // integer 1-20000
+  score: number, // integer 0-100
+  confidence: "LOW" | "MEDIUM" | "HIGH",
+  overview: string, // Markdown
+}[] // Array of teams sorted by rank.
 ```
 
 ### Authentication

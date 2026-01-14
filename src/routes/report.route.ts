@@ -1,10 +1,8 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import { Response4xx } from "@/.";
-import prisma, { Report, User } from "@/db";
+import Type from "typebox";
+import type App from "@/app";
+import prisma, { Report, TeamNumber, User } from "@/db";
 import { MatchType, TrenchOrBump } from "@/db/prisma/enums";
+import ErrorResponse from "@/error-response";
 
 const ReportGetSchema = {
   params: Type.Object({
@@ -17,7 +15,7 @@ const ReportGetSchema = {
       eventCode: Type.String(),
       matchType: Type.Enum(MatchType),
       matchNumber: Report.MatchNumber,
-      teamNumber: Report.TeamNumber,
+      teamNumber: TeamNumber,
       notes: Type.String(),
       trenchOrBump: Type.Enum(TrenchOrBump),
       minorFouls: Type.Integer({ minimum: 0 }),
@@ -26,7 +24,7 @@ const ReportGetSchema = {
       teleop: Report.Teleop,
       endgame: Report.Teleop,
     }),
-    "4xx": Response4xx,
+    "4xx": ErrorResponse,
   },
 };
 
@@ -36,7 +34,7 @@ const ReportPostSchema = {
     eventCode: Report.EventCode,
     matchType: Type.Enum(MatchType),
     matchNumber: Type.Integer({ minimum: 1, maximum: 200 }),
-    teamNumber: Report.TeamNumber,
+    teamNumber: TeamNumber,
     notes: Type.String({ maxLength: 400 }),
     trenchOrBump: Type.Enum(TrenchOrBump),
     minorFouls: Type.Integer({ minimum: 0 }),
@@ -50,7 +48,7 @@ const ReportPostSchema = {
   },
 };
 
-const report: FastifyPluginAsyncTypebox = async (app) => {
+export default async function report(app: App) {
   app.get("/report/:id", { schema: ReportGetSchema }, async (req, reply) => {
     const report = await prisma.report.findUnique({
       where: { id: req.params.id },
@@ -124,6 +122,4 @@ const report: FastifyPluginAsyncTypebox = async (app) => {
     });
     reply.code(201).send();
   });
-};
-
-export default report;
+}

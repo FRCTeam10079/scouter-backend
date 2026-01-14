@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
-import createApp from "@/app";
+import { createApp } from "@/app";
 import { TestUser } from "@/db";
 
 const app = await createApp();

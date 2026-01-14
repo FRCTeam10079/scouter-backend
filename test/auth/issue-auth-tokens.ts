@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import createApp from "@/app";
+import { createApp } from "@/app";
 import prisma, { TestUser } from "@/db";
 import { issueAuthTokens } from "@/routes/auth";
 

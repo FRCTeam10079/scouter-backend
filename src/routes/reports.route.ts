@@ -1,8 +1,6 @@
-import {
-  type FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
-import prisma, { Report, User } from "@/db";
+import Type from "typebox";
+import type App from "@/app";
+import prisma, { Report, TeamNumber, User } from "@/db";
 import { MatchType, TrenchOrBump } from "@/db/prisma/enums";
 
 const ReportsSchema = {
@@ -10,11 +8,12 @@ const ReportsSchema = {
     userId: Type.Optional(Type.Integer({ minimum: 0 })),
     eventCode: Type.Optional(Report.EventCode),
     matchType: Type.Optional(Type.Enum(MatchType)),
-    teamNumber: Type.Optional(Report.TeamNumber),
+    teamNumber: Type.Optional(TeamNumber),
     trenchOrBump: Type.Optional(Type.Enum(TrenchOrBump)),
     noMinorFouls: Type.Optional(Type.Boolean()),
     noMajorFouls: Type.Optional(Type.Boolean()),
     autoMovement: Type.Optional(Type.Boolean()),
+    autoLevel1: Type.Optional(Type.Boolean()),
     take: Type.Integer({ minimum: 0 }),
     skip: Type.Integer({ minimum: 0 }),
   }),
@@ -22,14 +21,14 @@ const ReportsSchema = {
     200: Type.Array(
       Type.Object({
         id: Type.Integer(),
-        teamNumber: Report.TeamNumber,
+        teamNumber: TeamNumber,
         user: Type.Union([User.Display, Type.Null()]),
-      })
+      }),
     ),
   },
 };
 
-const reports: FastifyPluginAsyncTypebox = async (app) => {
+export default async function reports(app: App) {
   app.get("/reports", { schema: ReportsSchema }, async (req) => {
     return await prisma.report.findMany({
       where: {
@@ -41,6 +40,7 @@ const reports: FastifyPluginAsyncTypebox = async (app) => {
         minorFouls: req.query.noMinorFouls ? 0 : undefined,
         majorFouls: req.query.noMajorFouls ? 0 : undefined,
         autoMovement: req.query.autoMovement,
+        autoLevel1: req.query.autoLevel1,
       },
       select: {
         id: true,
@@ -52,6 +52,4 @@ const reports: FastifyPluginAsyncTypebox = async (app) => {
       skip: req.query.skip,
     });
   });
-};
-
-export default reports;
+}
