@@ -2,6 +2,8 @@ import cron from "node-cron";
 import { createApp } from "./app";
 import prisma from "./db";
 
+// TODO: Cache team rankings.
+
 const EVERY_TUESDAY_AT_2AM = "0 2 * * TUE";
 
 if (process.env.NODE_ENV === "production") {

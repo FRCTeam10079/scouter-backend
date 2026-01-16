@@ -215,7 +215,7 @@ A 200 status code is always returned with the following response body:
 
 ### GET /rankings
 
-Returns team rankings using the OpenAI API. If the OpenAI API fails, a 502 status code is returned with the following response body:
+Returns team ranking data using the OpenAI API. If the OpenAI API fails, a 502 status code is returned with the following response body:
 ```ts
 { code: "OPENAI_API_FAILED" }
 ```
@@ -223,11 +223,12 @@ Upon success, a 200 status code is returned with the following response body:
 ```ts
 {
   teamNumber: number, // integer 1-20000
-  score: number, // integer 0-100
-  confidence: "LOW" | "MEDIUM" | "HIGH",
+  score: number, // 0-1 - aggregate score
+  confidence: number, // 0-1
   overview: string, // Markdown
-}[] // Array of teams sorted by rank.
+}[] // unsorted array
 ```
+I would personally recommend having a slider on the frontend that uses a formula like $score\times(n^2+(1-n^2)\times confidence)$ to rank teams with a default value around $0.7$.
 
 ### Authentication
 

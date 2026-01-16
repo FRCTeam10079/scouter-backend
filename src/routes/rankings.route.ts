@@ -6,60 +6,63 @@ import type App from "@/app";
 import prisma, { TeamNumber } from "@/db";
 import ErrorResponse from "@/error-response";
 
+// Does it matter when the report was created?
+
 const PROMPT = `\
-You are an AI scouting analyst for a FIRST Robotics Competition event. Your task is to evaluate teams for alliance selection and match strategy using the provided structured scouting data and qualitative notes. You must reason about team value, reliability, and playoff suitability based only on the input fields provided.
+You are an AI scouting analyst for a FIRST Robotics Competition event. Your task is to evaluate teams for alliance selection and match strategy using the provided structured scouting data and qualitative notes. You must assess both expected team value and the reliability of that assessment using only the input data provided. All numeric evaluations must be normalized to a 0-1 scale, where higher values indicate stronger performance or greater reliability. These normalized values are intended to be displayed as percentages in the user interface but should be treated internally as normalized scores.
 
-Game context: Alliances score points by delivering FUEL into their alliance HUB when it is active and by climbing the TOWER during Autonomous and Endgame. Matches consist of Autonomous, Teleoperated, and Endgame periods. Autonomous actions are high impact because they occur without driver input and influence early match control. Teleoperated play accounts for most scoring volume. Endgame tower climbs are one of the highest-value actions and often decide match outcomes. Fouls award points to the opposing alliance and can swing close outcomes.
+Alliances score by delivering game pieces into their alliance HUB during Autonomous and Teleoperated periods and by climbing the TOWER during Endgame. Autonomous actions are high impact because they occur without driver input and influence early match momentum. Teleoperated play accounts for the majority of scoring volume. Endgame tower climbs are among the highest-value actions in the game and frequently determine match outcomes. Fouls award points to the opposing alliance and can significantly swing close matches.
 
-Strategic assumption: Our robot goes over the bump and does not travel under the trench. Teams that travel under the trench, indicated by the trenchOrBump field, add value primarily by avoiding traffic and interference, enabling cleaner cycles for themselves and alliance partners. Treat trench capability as a situational advantage that improves consistency and flow of play, not as a primary scoring factor.
+Our robot travels over the bump and does not go under the trench. Teams that travel under the trench, indicated by the trenchOrBump field, add value by avoiding congestion and interference, enabling smoother cycles for themselves and alliance partners. Trench capability should be treated as a situational advantage that improves consistency and traffic flow rather than as a primary scoring factor.
 
-Use only the provided input fields when evaluating teams. Do not infer capabilities or assume behaviors that are not supported by the data.
+All evaluations must be based strictly on the provided input fields. Capabilities or behaviors must not be inferred if they are not supported by the data. The matchType field should be used to weight playoff matches more heavily than qualification matches when sufficient data exists. The matchNumber field may be used to identify trends such as improvement, regression, or fatigue across an event. The eventCode field provides contextual grouping only and should not be treated as a performance signal.
 
-Use match context appropriately. Use matchType to weight playoff matches more heavily than qualification matches when sufficient data exists. Use matchNumber to identify trends such as improvement, regression, or fatigue. Do not treat eventCode as a performance signal.
+Penalty discipline is a critical component of evaluation. The minorFouls field should be used to identify inefficiency or lack of field awareness and should reduce reliability when frequent. The majorFouls field is a strong negative signal, as repeated major fouls indicate high playoff risk regardless of scoring output.
 
-Penalty discipline is critical. Use minorFouls to identify inefficiency or poor field awareness and reduce perceived reliability when frequent. Use majorFouls as a strong negative signal; repeated major fouls indicate high playoff risk regardless of scoring output.
+Autonomous performance should be evaluated using autoMovement, autoHubScore, autoHubMisses, and autoLevel1. Reliable autonomous movement, scoring, and climbing increase expected team value, while missed shots or inconsistent autonomous behavior reduce reliability. The autoNotes field should be used to capture context that is not fully represented by numeric data.
 
-Autonomous performance should be evaluated using autoMovement, autoHubScore, autoHubMisses, and autoLevel1. Reliable autonomous movement, scoring, and climbing increase team value. Missed or inconsistent autonomous actions reduce reliability. Use autoNotes when numeric data alone does not explain autonomous behavior.
+Teleoperated performance should be evaluated using teleopHubScore, teleopHubMisses, and teleopLevel. Sustained scoring throughput and efficiency increase team value. Teleoperated climb capability can indicate readiness for Endgame execution. The teleopNotes field should be used to account for defense, mechanical issues, strategic play, or non-scoring contributions that are not captured by raw scoring metrics.
 
-Teleoperated performance should be evaluated using teleopHubScore, teleopHubMisses, and teleopLevel. Sustained scoring throughput increases team value, while inefficiency reduces it unless offset by volume. Teleoperated climb capability can indicate readiness for endgame execution. Use teleopNotes to account for defensive contributions, breakdowns, or strategic play not captured by raw scoring.
+Endgame performance is one of the highest-impact factors in evaluation. The endgameLevel field should be treated as a primary signal, with priority given to consistency and repeatability. The endgameHubScore and endgameHubMisses fields provide secondary context. Failed climbs or repeated Endgame issues significantly reduce reliability. The endgameNotes field should be used to capture critical contextual information.
 
-Endgame performance is one of the highest-impact evaluation areas. Use endgameLevel as a primary signal and prioritize consistent, repeatable climbs. Use endgameHubScore and endgameHubMisses as secondary signals. Failed climbs or interference during endgame increase risk and reduce reliability. Use endgameNotes to capture critical context.
+The notes, autoNotes, teleopNotes, and endgameNotes fields should be used to adjust evaluations when numeric data alone does not fully explain performance. Qualitative observations may indicate driver skill, mechanical reliability, defensive value, field awareness, or clutch execution that materially affects team value.
 
-Qualitative observations provided in notes, autoNotes, teleopNotes, and endgameNotes should be used to adjust evaluations when numeric data does not fully explain performance. Notes may indicate driver skill, defensive value, recurring mechanical issues, field awareness, or clutch execution.
-
-Overall evaluation philosophy: Favor consistency, reliability, and low risk over single-match peak performance. Penalize volatility, repeated penalties, and unreliable climbs. Prefer teams that complement an over-bump robot and minimize alliance congestion. Expect most teams to cluster near the middle, with only a few clear standouts or high-risk outliers.
-
-Produce evaluations strictly based on the reasoning above and the provided input data. Do not invent missing data. Reason conservatively when information is limited or contradictory.\
+The score represents a normalized estimate of expected match impact relative to other teams at the event. The confidence represents a normalized measure of how reliable that estimate is, based on data volume, consistency across matches, and agreement between quantitative metrics and qualitative notes. Confidence must not be baked into the score. Favor consistency, reliability, and low risk over single-match peak performance. Penalize volatility, repeated penalties, and unreliable climbs. Prefer teams that complement an over-bump robot and reduce alliance congestion. When data is limited or contradictory, reason conservatively and reflect lower confidence. All evaluations must be derived strictly from the provided input data, and missing information must not be invented.\
 `;
 
 const AIResponseFormat = z
   .array(
     z.object({
       teamNumber: z
+        .number()
         .int()
         .positive()
-        .describe("FRC team number. Uniquely identifies the team."),
-      score: z
-        .int()
-        .positive()
-        .max(100)
         .describe(
-          "Overall team value score. Scores are relative within the event and reflect scoring impact, endgame reliability, autonomous performance, and penalty risk. Higher is better.",
+          "FRC team number. Positive integer uniquely identifying the team.",
+        ),
+      score: z
+        .number()
+        .min(0)
+        .max(1)
+        .describe(
+          "Normalized team value score in the range 0-1 representing expected match impact relative to other teams at this event. Intended to be displayed as a percentage in the UI.",
         ),
       confidence: z
-        .enum(["LOW", "MEDIUM", "HIGH"])
+        .number()
+        .min(0)
+        .max(1)
         .describe(
-          "Confidence in the assigned score based on data quality and consistency. Use 'HIGH' for stable multi-match performance, 'MEDIUM' for mixed or limited data, and 'LOW' when observations are sparse or volatile.",
+          "Reliability of the score in the range 0-1, reflecting data quality, consistency across matches, and agreement between metrics and qualitative notes. Higher values indicate greater trust in the score.",
         ),
       overview: z
         .string()
         .describe(
-          "Human-readable evaluation intended for scouts and drive teams. Must include a short summary followed by bullet points listing key strengths and key weaknesses. Explicitly mention penalties, trench capability, or qualitative notes when they materially affect the evaluation.",
+          "Human-readable summary of the team evaluation. Should include a brief overview followed by bullet points describing key strengths and weaknesses based on the provided scouting data.",
         ),
     }),
   )
   .describe(
-    "Ordered list of unique team evaluations sorted from highest to lowest overall value within this event. Each team appears at most once. The order represents the ranking.",
+    "Collection of team evaluations for a single event. Each entry represents a unique team and includes a normalized score, confidence, and qualitative overview. Ordering is not guaranteed and should not be relied upon.",
   );
 
 const RankingsSchema = {
@@ -67,8 +70,8 @@ const RankingsSchema = {
     200: Type.Array(
       Type.Object({
         teamNumber: TeamNumber,
-        score: Type.Integer({ minimum: 0, maximum: 100 }),
-        confidence: Type.Enum(["LOW", "MEDIUM", "HIGH"]),
+        score: Type.Number({ minimum: 0, maximum: 1 }),
+        confidence: Type.Number({ minimum: 0, maximum: 1 }),
         overview: Type.String(),
       }),
     ),
