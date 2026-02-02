@@ -1,46 +1,48 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import Type from "typebox";
+import z from "zod";
+import { CoercedInt } from "@/schemas";
 import { Level, PrismaClient } from "./prisma/client";
 
 const adapter = new PrismaPg({
   connectionString: `${process.env.DATABASE_URL}`,
 });
-const prisma = new PrismaClient({ adapter });
-export default prisma;
+const db = new PrismaClient({ adapter });
+export default db;
 
 export namespace User {
-  export const Username = Type.String({ minLength: 1, maxLength: 30 });
-  export const Password = Type.String({ minLength: 1, maxLength: 50 });
-  export const FirstName = Type.String({ minLength: 1, maxLength: 50 });
-  export const LastName = Type.String({ maxLength: 50 });
+  export const Username = z.string().min(1).max(30);
+  export const Password = z.string().min(1).max(50);
+  export const FirstName = z.string().min(1).max(50);
+  export const LastName = z.string().min(1).max(50);
 
-  export const Display = Type.Object({
-    id: Type.Integer(),
-    firstName: Type.String(),
-    lastName: Type.String(),
+  export const Display = z.object({
+    id: z.int().positive(),
+    firstName: z.string(),
+    lastName: z.string(),
   });
 }
 
-export const TeamNumber = Type.Integer({ minimum: 1, maximum: 20000 });
+export const TeamNumber = z.int().min(1).max(20000);
 
 export namespace Report {
-  export const EventCode = Type.String({ minLength: 5, maxLength: 5 });
-  export const MatchNumber = Type.Integer({ minimum: 1, maximum: 200 });
-  export const Notes = Type.String({ maxLength: 400 });
+  export const EventCode = z.string().length(5);
+  export const MatchNumber = z.int().min(1).max(200);
+  export const CoercedMatchNumber = CoercedInt.min(1).max(200);
+  export const Notes = z.string().max(400);
 
-  export const Auto = Type.Object({
+  export const Auto = z.object({
     notes: Notes,
-    movement: Type.Boolean(),
-    hubScore: Type.Integer({ minimum: 0 }),
-    hubMisses: Type.Integer({ minimum: 0 }),
-    level1: Type.Boolean(),
+    movement: z.boolean(),
+    hubScore: z.int().positive(),
+    hubMisses: z.int().positive(),
+    level1: z.boolean(),
   });
 
-  export const Teleop = Type.Object({
+  export const Teleop = z.object({
     notes: Notes,
-    hubScore: Type.Integer({ minimum: 0 }),
-    hubMisses: Type.Integer({ minimum: 0 }),
-    level: Type.Union([Type.Enum(Level), Type.Null()]),
+    hubScore: z.int().positive(),
+    hubMisses: z.int().positive(),
+    level: z.union([z.enum(Level), z.null()]),
   });
 }
 
@@ -49,7 +51,7 @@ export namespace TestUser {
   export const PASSWORD = "4FeetTallRisith?45!";
 
   export async function getId() {
-    const user = await prisma.user.findUniqueOrThrow({
+    const user = await db.user.findUniqueOrThrow({
       where: { username: USERNAME },
       select: { id: true },
     });

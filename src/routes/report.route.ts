@@ -1,56 +1,54 @@
-import Type from "typebox";
+import z from "zod";
 import type App from "@/app";
-import prisma, { Report, TeamNumber, User } from "@/db";
-import { MatchType, TrenchOrBump } from "@/db/prisma/enums";
-import ErrorResponse from "@/error-response";
+import db, { Report, TeamNumber, User } from "@/db";
+import { MatchType } from "@/db/prisma/enums";
+import { Response4xx } from "@/schemas";
 
 const ReportGetSchema = {
-  params: Type.Object({
-    id: Type.Integer({ minimum: 0 }),
+  params: z.object({
+    id: z.coerce.number().int().positive(),
   }),
   response: {
-    200: Type.Object({
-      user: Type.Union([User.Display, Type.Null()]),
-      createdAt: Type.String({ format: "date-time" }),
-      eventCode: Type.String(),
-      matchType: Type.Enum(MatchType),
+    200: z.object({
+      user: z.union([User.Display, z.null()]),
+      createdAt: z.iso.datetime(),
+      eventCode: z.string(),
+      matchType: z.enum(MatchType),
       matchNumber: Report.MatchNumber,
       teamNumber: TeamNumber,
-      notes: Type.String(),
-      trenchOrBump: Type.Enum(TrenchOrBump),
-      minorFouls: Type.Integer({ minimum: 0 }),
-      majorFouls: Type.Integer({ minimum: 0 }),
+      notes: z.string(),
+      minorFouls: z.int().positive(),
+      majorFouls: z.int().positive(),
       auto: Report.Auto,
       teleop: Report.Teleop,
       endgame: Report.Teleop,
     }),
-    "4xx": ErrorResponse,
+    "4xx": Response4xx,
   },
 };
 
 const ReportPostSchema = {
-  body: Type.Object({
-    createdAt: Type.String({ format: "date-time" }),
+  body: z.object({
+    createdAt: z.iso.datetime(),
     eventCode: Report.EventCode,
-    matchType: Type.Enum(MatchType),
-    matchNumber: Type.Integer({ minimum: 1, maximum: 200 }),
+    matchType: z.enum(MatchType),
+    matchNumber: z.int().min(1).max(200),
     teamNumber: TeamNumber,
-    notes: Type.String({ maxLength: 400 }),
-    trenchOrBump: Type.Enum(TrenchOrBump),
-    minorFouls: Type.Integer({ minimum: 0 }),
-    majorFouls: Type.Integer({ minimum: 0 }),
+    notes: z.string().max(400),
+    minorFouls: z.int().positive(),
+    majorFouls: z.int().positive(),
     auto: Report.Auto,
     teleop: Report.Teleop,
     endgame: Report.Teleop,
   }),
   response: {
-    201: Type.Null(),
+    201: z.null(),
   },
 };
 
 export default async function report(app: App) {
   app.get("/report/:id", { schema: ReportGetSchema }, async (req, reply) => {
-    const report = await prisma.report.findUnique({
+    const report = await db.report.findUnique({
       where: { id: req.params.id },
       include: {
         user: { select: { id: true, firstName: true, lastName: true } },
@@ -67,7 +65,6 @@ export default async function report(app: App) {
       matchNumber: report.matchNumber,
       teamNumber: report.teamNumber,
       notes: report.notes,
-      trenchOrBump: report.trenchOrBump,
       minorFouls: report.minorFouls,
       majorFouls: report.majorFouls,
       auto: {
@@ -93,7 +90,7 @@ export default async function report(app: App) {
   });
 
   app.post("/report", { schema: ReportPostSchema }, async (req, reply) => {
-    await prisma.report.create({
+    await db.report.create({
       data: {
         userId: req.user.id,
         createdAt: req.body.createdAt,
@@ -102,7 +99,6 @@ export default async function report(app: App) {
         matchNumber: req.body.matchNumber,
         teamNumber: req.body.teamNumber,
         notes: req.body.notes,
-        trenchOrBump: req.body.trenchOrBump,
         minorFouls: req.body.minorFouls,
         majorFouls: req.body.majorFouls,
         autoNotes: req.body.auto.notes,

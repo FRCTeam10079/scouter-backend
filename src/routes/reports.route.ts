@@ -1,28 +1,36 @@
-import Type from "typebox";
+import z from "zod";
 import type App from "@/app";
-import prisma, { Report, TeamNumber, User } from "@/db";
-import { MatchType, TrenchOrBump } from "@/db/prisma/enums";
+import db, { Report, TeamNumber, User } from "@/db";
+import { MatchType } from "@/db/prisma/enums";
+import { CoercedInt } from "@/schemas";
 
 const ReportsSchema = {
-  querystring: Type.Object({
-    userId: Type.Optional(Type.Integer({ minimum: 0 })),
-    eventCode: Type.Optional(Report.EventCode),
-    matchType: Type.Optional(Type.Enum(MatchType)),
-    teamNumber: Type.Optional(TeamNumber),
-    trenchOrBump: Type.Optional(Type.Enum(TrenchOrBump)),
-    noMinorFouls: Type.Optional(Type.Boolean()),
-    noMajorFouls: Type.Optional(Type.Boolean()),
-    autoMovement: Type.Optional(Type.Boolean()),
-    autoLevel1: Type.Optional(Type.Boolean()),
-    take: Type.Integer({ minimum: 0 }),
-    skip: Type.Integer({ minimum: 0 }),
+  querystring: z.object({
+    userId: CoercedInt.positive().optional(),
+    eventCode: Report.EventCode.optional(),
+    matchType: z.enum(MatchType).optional(),
+    minMatchNumber: Report.CoercedMatchNumber.optional(),
+    maxMatchNumber: Report.CoercedMatchNumber.optional(),
+    teamNumber: TeamNumber.optional(),
+    maxMinorFouls: CoercedInt.positive().optional(),
+    maxMajorFouls: CoercedInt.positive().optional(),
+    autoMovement: z.boolean().optional(),
+    autoMinHubScore: CoercedInt.min(1).optional(),
+    autoMaxHubMisses: CoercedInt.positive().optional(),
+    autoLevel1: z.boolean().optional(),
+    teleopMinHubScore: CoercedInt.min(1).optional(),
+    teleopMaxHubMisses: CoercedInt.positive().optional(),
+    endgameMinHubScore: CoercedInt.min(1).optional(),
+    endgameMaxHubMisses: CoercedInt.positive().optional(),
+    take: z.int().positive(),
+    skip: z.int().positive(),
   }),
   response: {
-    200: Type.Array(
-      Type.Object({
-        id: Type.Integer(),
+    200: z.array(
+      z.object({
+        id: z.int(),
         teamNumber: TeamNumber,
-        user: Type.Union([User.Display, Type.Null()]),
+        user: z.union([User.Display, z.null()]),
       }),
     ),
   },
@@ -30,17 +38,26 @@ const ReportsSchema = {
 
 export default async function reports(app: App) {
   app.get("/reports", { schema: ReportsSchema }, async (req) => {
-    return await prisma.report.findMany({
+    return await db.report.findMany({
       where: {
         userId: req.query.userId,
         eventCode: req.query.eventCode,
         matchType: req.query.matchType,
+        matchNumber: {
+          gte: req.query.minMatchNumber,
+          lte: req.query.maxMatchNumber,
+        },
         teamNumber: req.query.teamNumber,
-        trenchOrBump: req.query.trenchOrBump,
-        minorFouls: req.query.noMinorFouls ? 0 : undefined,
-        majorFouls: req.query.noMajorFouls ? 0 : undefined,
+        minorFouls: { lte: req.query.maxMinorFouls },
+        majorFouls: { lte: req.query.maxMajorFouls },
         autoMovement: req.query.autoMovement,
+        autoHubScore: { gte: req.query.autoMinHubScore },
+        autoHubMisses: { lte: req.query.autoMaxHubMisses },
         autoLevel1: req.query.autoLevel1,
+        teleopHubScore: { gte: req.query.teleopMinHubScore },
+        teleopHubMisses: { lte: req.query.teleopMaxHubMisses },
+        endgameHubScore: { gte: req.query.endgameMinHubScore },
+        endgameHubMisses: { lte: req.query.endgameMaxHubMisses },
       },
       select: {
         id: true,

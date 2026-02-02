@@ -1,13 +1,10 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
-import TypeCompiler from "typebox/compile";
-import { createApp } from "@/app";
+import { createApp, Logger } from "@/app";
 import { TestUser } from "@/db";
-import { AuthTokensResponse, issueAuthTokens } from "@/routes/auth";
+import { AuthTokens, issueAuthTokens } from "@/routes/auth";
 
-const AuthTokensValidator = TypeCompiler.Compile(AuthTokensResponse[201]);
-
-const app = await createApp();
+const app = await createApp(Logger.TEST);
 
 async function request(refreshToken: string) {
   return await app.inject({
@@ -22,9 +19,9 @@ describe("POST /auth/refresh", () => {
   it("Returns an access token and a rotated refresh token", async () => {
     await app.ready();
     const authTokens = await issueAuthTokens(app, await TestUser.getId());
-    const refreshResponse = await request(authTokens.refreshToken);
-    const newAuthTokens = refreshResponse.json();
-    assert(AuthTokensValidator.Check(newAuthTokens));
+    const response = await request(authTokens.refreshToken);
+    assert.strictEqual(response.statusCode, 201);
+    const newAuthTokens = AuthTokens.parse(response.json());
     assert.notStrictEqual(authTokens.refreshToken, newAuthTokens.refreshToken);
   });
 
@@ -36,6 +33,4 @@ describe("POST /auth/refresh", () => {
   });
 });
 
-after(async () => {
-  await app.close();
-});
+after(() => app.close());

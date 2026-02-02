@@ -1,8 +1,6 @@
 import cron from "node-cron";
-import { createApp } from "./app";
+import { createApp, Logger } from "./app";
 import prisma from "./db";
-
-// TODO: Cache team rankings.
 
 const EVERY_TUESDAY_AT_2AM = "0 2 * * TUE";
 
@@ -14,18 +12,9 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-const app = await createApp({
-  logger: process.env.NODE_ENV === "development" && {
-    transport: {
-      // Pretty logging
-      target: "pino-pretty",
-      options: {
-        translateTime: "SYS:hh:MM:ss", // 12-hour clock with local time
-        ignore: "req.host,req.remoteAddress,req.remotePort,pid,hostname,reqId",
-      },
-    },
-  },
-});
+const logger =
+  process.env.NODE_ENV === "development" ? Logger.DEV : Logger.PROD;
+const app = await createApp(logger);
 
 try {
   await app.listen({ port: 8000 });

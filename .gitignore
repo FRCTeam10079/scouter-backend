@@ -1,6 +1,8 @@
+/avatars
 /node_modules
+/src/db/prisma
 /build
+.env*
+*.log
 .DS_Store
 *.pem
-.env*
-/src/db/prisma

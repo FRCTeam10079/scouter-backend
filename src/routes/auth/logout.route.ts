@@ -1,18 +1,18 @@
-import Type from "typebox";
+import z from "zod";
 import type App from "@/app";
-import prisma from "@/db";
+import db from "@/db";
 import { RefreshToken } from ".";
 
 const LogoutSchema = {
   body: RefreshToken,
   response: {
-    204: Type.Null(),
+    204: z.null(),
   },
 };
 
 export default async function logout(app: App) {
   app.delete("/logout", { schema: LogoutSchema }, async (req, reply) => {
-    await prisma.refreshToken.delete({ where: { value: req.body } });
+    await db.refreshToken.delete({ where: { value: req.body } });
     reply.code(204).send();
   });
 }

@@ -1,18 +1,18 @@
-import Type from "typebox";
+import z from "zod";
 import type App from "@/app";
-import prisma, { User } from "@/db";
-import ErrorResponse from "@/error-response";
+import db, { User } from "@/db";
+import { Response4xx } from "@/schemas";
 
 const UserSchema = {
   response: {
-    200: Type.Array(User.Display),
-    "4xx": ErrorResponse,
+    200: z.array(User.Display),
+    "4xx": Response4xx,
   },
 };
 
 export default async function user(app: App) {
   app.get("/users", { schema: UserSchema }, () => {
-    return prisma.user.findMany({
+    return db.user.findMany({
       select: { id: true, firstName: true, lastName: true },
     });
   });

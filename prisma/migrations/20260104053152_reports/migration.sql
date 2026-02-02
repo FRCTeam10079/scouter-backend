@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "MatchType" AS ENUM ('PRACTICE', 'QUALIFICATION', 'PLAYOFF');
+CREATE TYPE "MatchType" AS ENUM ('QUALIFICATION', 'PLAYOFF');
 
 -- CreateTable
 CREATE TABLE "Report" (
