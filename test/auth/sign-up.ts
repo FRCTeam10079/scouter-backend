@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import * as argon2 from "@node-rs/argon2";
-import { createApp } from "@/app";
+import { createApp, Logger } from "@/app";
 import prisma, { TestUser } from "@/db";
 import { TEAM_PASSWORD } from "@/routes/auth/sign-up.route";
 
 const NEW_USER = {
   username: "mr.snuggles",
   password: "flibblejuffle",
-  firstName: "Steve",
+  firstName: "Pranav",
   lastName: "Gibberjabber",
 };
 
-const app = await createApp();
+const app = await createApp(Logger.TEST);
 
 describe("POST /auth/sign-up", () => {
   it("Creates a new user", async () => {
@@ -48,6 +48,4 @@ describe("POST /auth/sign-up", () => {
   });
 });
 
-after(async () => {
-  await app.close();
-});
+after(() => app.close());

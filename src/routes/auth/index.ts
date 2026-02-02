@@ -5,9 +5,9 @@ declare module "@fastify/jwt" {
 }
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { type Static, Type } from "typebox";
-import prisma from "@/db";
-import ErrorResponse from "@/error-response";
+import z from "zod";
+import db from "@/db";
+import { Response4xx } from "@/schemas";
 
 /** Verifies that the request has a valid bearer token in the Authentication
  * header. Upon success, `req.user.id` is set to the user's id. Upon failure,
@@ -23,25 +23,27 @@ export async function authenticate(req: FastifyRequest, reply: FastifyReply) {
   }
 }
 
-export const RefreshToken = Type.String({ format: "uuid" });
+export const RefreshToken = z.uuidv4();
+
+export const AuthTokens = z.object({
+  accessToken: z.string(),
+  refreshToken: RefreshToken,
+});
+
+export type AuthTokens = z.infer<typeof AuthTokens>;
 
 export const AuthTokensResponse = {
-  201: Type.Object({
-    accessToken: Type.String(),
-    refreshToken: RefreshToken,
-  }),
-  "4xx": ErrorResponse,
+  201: AuthTokens,
+  "4xx": Response4xx,
 };
-
-export type AuthTokensResponse = Static<(typeof AuthTokensResponse)[201]>;
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function issueAuthTokens(
   app: FastifyInstance,
   userId: number,
-): Promise<AuthTokensResponse> {
-  const refreshToken = await prisma.refreshToken.create({
+): Promise<AuthTokens> {
+  const refreshToken = await db.refreshToken.create({
     data: {
       userId,
       expiresAt: new Date(Date.now() + THIRTY_DAYS_MS),

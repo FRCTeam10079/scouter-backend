@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
-import { createApp } from "@/app";
+import { createApp, Logger } from "@/app";
 import { TestUser } from "@/db";
 
-const app = await createApp();
+const app = await createApp(Logger.TEST);
 
 async function request(username: string, password: string) {
   return await app.inject({
@@ -27,6 +27,4 @@ describe("POST /auth/login", () => {
   });
 });
 
-after(async () => {
-  await app.close();
-});
+after(() => app.close());

@@ -1,15 +1,15 @@
 import type App from "@/app";
-import prisma from "@/db";
-import * as auth from ".";
+import db from "@/db";
+import { AuthTokensResponse, issueAuthTokens, RefreshToken } from ".";
 
 const RefreshSchema = {
-  body: auth.RefreshToken,
-  response: auth.AuthTokensResponse,
+  body: RefreshToken,
+  response: AuthTokensResponse,
 };
 
 export default async function refresh(app: App) {
   app.post("/refresh", { schema: RefreshSchema }, async (req, reply) => {
-    const storedRefreshToken = await prisma.refreshToken.findUnique({
+    const storedRefreshToken = await db.refreshToken.findUnique({
       where: { value: req.body },
       select: { expiresAt: true, userId: true },
     });
@@ -19,9 +19,7 @@ export default async function refresh(app: App) {
     if (storedRefreshToken.expiresAt < new Date()) {
       return reply.status(401).send({ code: "EXPIRED_REFRESH_TOKEN" });
     }
-    await prisma.refreshToken.delete({ where: { value: req.body } });
-    reply
-      .code(201)
-      .send(await auth.issueAuthTokens(app, storedRefreshToken.userId));
+    await db.refreshToken.delete({ where: { value: req.body } });
+    reply.code(201).send(await issueAuthTokens(app, storedRefreshToken.userId));
   });
 }

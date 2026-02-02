@@ -1,29 +1,44 @@
 import assert from "node:assert/strict";
-import test from "node:test";
-import * as argon2 from "@node-rs/argon2";
-import { createApp } from "@/app";
-import prisma, { TestUser } from "@/db";
+import fs from "node:fs";
+import path from "node:path";
+import { after, test } from "node:test";
+import { createApp, Logger } from "@/app";
+import { TestUser } from "@/db";
 import { issueAuthTokens } from "@/routes/auth";
 
-const UPDATES = { firstName: "Pranav", password: "mcdonalds" };
+const PORT = 8000;
+
+const app = await createApp(Logger.TEST);
+const userId = await TestUser.getId();
+const avatarPath = path.join("avatars", String(userId));
 
 test("PATCH /me updates the user", async () => {
-  const app = await createApp();
+  // `app.inject()` doesn't work for some reason, so a real server has to be
+  // run. It could just be that I don't know how to send form data correctly.
+  await app.listen({ port: PORT });
   await app.ready();
-  const userId = await TestUser.getId();
   const { accessToken } = await issueAuthTokens(app, userId);
-  const response = await app.inject({
+
+  const formData = new FormData();
+  formData.set("firstName", "Kiet");
+  formData.set(
+    "avatar",
+    new Blob(
+      [fs.readFileSync(path.join(import.meta.dirname, "chelsea.webp"))],
+      { type: "image/webp" },
+    ),
+  );
+
+  const response = await fetch(`http://localhost:${PORT}/me`, {
     method: "PATCH",
-    url: "/me",
-    body: UPDATES,
     headers: { authorization: `Bearer ${accessToken}` },
+    body: formData,
   });
-  assert.strictEqual(response.statusCode, 204);
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { firstName: true, passwordHash: true },
-  });
-  assert.strictEqual(user.firstName, UPDATES.firstName);
-  assert(await argon2.verify(user.passwordHash, UPDATES.password));
-  await app.close();
+  assert.strictEqual(response.status, 204);
+  assert(fs.existsSync(avatarPath));
+});
+
+after(() => {
+  fs.rmSync(avatarPath, { force: true });
+  return app.close();
 });

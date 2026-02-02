@@ -1,16 +1,16 @@
 import * as argon2 from "@node-rs/argon2";
-import Type from "typebox";
+import z from "zod";
 import type App from "@/app";
-import prisma, { User } from "@/db";
+import db, { User } from "@/db";
 import { AuthTokensResponse, issueAuthTokens } from ".";
 
 const SignUpSchema = {
-  body: Type.Object({
+  body: z.object({
     username: User.Username,
     password: User.Password,
     firstName: User.FirstName,
     lastName: User.LastName,
-    teamPassword: Type.String({ minLength: 1 }),
+    teamPassword: z.string().min(1),
   }),
   response: AuthTokensResponse,
 };
@@ -22,13 +22,13 @@ export default async function signUp(app: App) {
     if (req.body.teamPassword !== TEAM_PASSWORD) {
       return reply.code(401).send({ code: "INCORRECT_TEAM_PASSWORD" });
     }
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await db.user.findUnique({
       where: { username: req.body.username },
     });
     if (existingUser) {
       return reply.code(409).send({ code: "USERNAME_TAKEN" });
     }
-    const user = await prisma.user.create({
+    const user = await db.user.create({
       data: {
         username: req.body.username,
         passwordHash: await argon2.hash(req.body.password),

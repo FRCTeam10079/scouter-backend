@@ -1,16 +1,23 @@
 import path from "node:path";
 import fastifyAutoload from "@fastify/autoload";
+import fastifyCors from "@fastify/cors";
 import fastifyJwt from "@fastify/jwt";
-import fastifyMultipart from "@fastify/multipart";
-import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import fastify, {
   type FastifyBaseLogger,
   type FastifyInstance,
-  type FastifyServerOptions,
   type RawReplyDefaultExpression,
   type RawRequestDefaultExpression,
   type RawServerDefault,
 } from "fastify";
+import type {
+  FastifyLoggerOptions,
+  PinoLoggerOptions,
+} from "fastify/types/logger";
+import {
+  serializerCompiler,
+  validatorCompiler,
+  type ZodTypeProvider,
+} from "fastify-type-provider-zod";
 import { authenticate } from "./routes/auth";
 
 type App = FastifyInstance<
@@ -18,30 +25,65 @@ type App = FastifyInstance<
   RawRequestDefaultExpression,
   RawReplyDefaultExpression,
   FastifyBaseLogger,
-  TypeBoxTypeProvider
+  ZodTypeProvider
 >;
 export type { App as default };
 
-export async function createApp(options?: FastifyServerOptions): Promise<App> {
+export async function createApp(logger: Logger): Promise<App> {
+  const app = fastify({ logger }).withTypeProvider<ZodTypeProvider>();
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+
   if (!process.env.JWT_SECRET) {
-    console.error("JWT_SECRET environment variable has not been set");
+    app.log.error("JWT_SECRET environment variable has not been set");
     process.exit(1);
   }
-
-  const app = fastify(options).withTypeProvider<TypeBoxTypeProvider>();
-
-  await app.register(fastifyMultipart);
   await app.register(fastifyJwt, { secret: process.env.JWT_SECRET });
   app.addHook("onRequest", authenticate);
+
+  if (process.env.NODE_ENV === "development") {
+    // CORS is used since the frontend can be tested in a web browser.
+    await app.register(fastifyCors, {
+      methods: ["GET", "POST", "PATCH", "DELETE"],
+    });
+  }
 
   await app.register(fastifyAutoload, {
     dir: path.join(import.meta.dirname, "routes"),
     // Ignore index files because they cause other plugins in the same directory
     // to be ignored.
     indexPattern: /$^/,
-    matchFilter: /\.route\.(ts|js)$/,
+    matchFilter: /.route\.(ts|js)$/,
     forceESM: true,
   });
 
   return app;
+}
+
+export type Logger = FastifyLoggerOptions & PinoLoggerOptions;
+
+export namespace Logger {
+  /** Logs everything. */
+  export const DEV: Logger = {
+    transport: {
+      // Pretty logging
+      target: "pino-pretty",
+      options: {
+        translateTime: "SYS:hh:MM:ss", // 12-hour local clock
+        ignore: "req.host,req.remoteAddress,req.remotePort,pid,hostname,reqId",
+      },
+    },
+  };
+
+  /** Logs errors and warnings to error.log. */
+  export const PROD: Logger = {
+    level: "warn",
+    file: "error.log",
+  };
+
+  /** Logs errors and warnings. */
+  export const TEST: Logger = {
+    level: "warn",
+    ...DEV,
+  };
 }

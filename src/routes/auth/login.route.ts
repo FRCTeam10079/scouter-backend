@@ -1,11 +1,11 @@
 import * as argon2 from "@node-rs/argon2";
-import Type from "typebox";
+import z from "zod";
 import type App from "@/app";
-import prisma, { User } from "@/db";
+import db, { User } from "@/db";
 import { AuthTokensResponse, issueAuthTokens } from ".";
 
 const LoginSchema = {
-  body: Type.Object({
+  body: z.object({
     username: User.Username,
     password: User.Password,
   }),
@@ -14,7 +14,7 @@ const LoginSchema = {
 
 export default async function login(app: App) {
   app.post("/login", { schema: LoginSchema }, async (req, reply) => {
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { username: req.body.username },
       select: { id: true, passwordHash: true },
     });

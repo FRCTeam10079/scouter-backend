@@ -25,42 +25,35 @@ model RefreshToken {
 }
 
 model Report {
-  id               Int          @id @default(autoincrement())
-  user             User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id               Int       @id @default(autoincrement())
+  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId           Int?
   createdAt        DateTime
-  eventCode        String       @db.Char(5)
+  eventCode        String    @db.Char(5)
   matchType        MatchType
-  matchNumber      Int          @db.SmallInt
-  teamNumber       Int          @db.SmallInt
-  notes            String       @db.VarChar(400)
-  trenchOrBump     TrenchOrBump
-  minorFouls       Int          @db.SmallInt
-  majorFouls       Int          @db.SmallInt
-  autoNotes        String       @db.VarChar(400)
+  matchNumber      Int       @db.SmallInt
+  teamNumber       Int       @db.SmallInt
+  notes            String    @db.VarChar(400)
+  minorFouls       Int       @db.SmallInt
+  majorFouls       Int       @db.SmallInt
+  autoNotes        String    @db.VarChar(400)
   autoMovement     Boolean
-  autoHubScore     Int          @db.SmallInt
-  autoHubMisses    Int          @db.SmallInt
+  autoHubScore     Int       @db.SmallInt
+  autoHubMisses    Int       @db.SmallInt
   autoLevel1       Boolean
-  teleopNotes      String       @db.VarChar(400)
-  teleopHubScore   Int          @db.SmallInt
-  teleopHubMisses  Int          @db.SmallInt
+  teleopNotes      String    @db.VarChar(400)
+  teleopHubScore   Int       @db.SmallInt
+  teleopHubMisses  Int       @db.SmallInt
   teleopLevel      Level?
-  endgameNotes     String       @db.VarChar(400)
-  endgameHubScore  Int          @db.SmallInt
-  endgameHubMisses Int          @db.SmallInt
+  endgameNotes     String    @db.VarChar(400)
+  endgameHubScore  Int       @db.SmallInt
+  endgameHubMisses Int       @db.SmallInt
   endgameLevel     Level?
 }
 
 enum MatchType {
-  PRACTICE
   QUALIFICATION
   PLAYOFF
-}
-
-enum TrenchOrBump {
-  TRENCH
-  BUMP
 }
 
 enum Level {
