@@ -110,7 +110,7 @@ Returns a list of users. A 200 status code is always returned with the following
 
 ### GET /avatar/:userId
 
-Returns the specified user's avatar. `userId` must be an unsigned integer. If the user does not have a profile picture or their account has been deleted, a 404 status code is returned with `code` set to `NO_SUCH_AVATAR`. `size` is required as a query parameter to specify the size to load the image in and must an integer be between `32` and `512`.
+Returns the specified user's avatar. `userId` must be an unsigned integer. If the user does not have a profile picture or their account has been deleted, a 404 status code is returned with `code` set to `NO_SUCH_AVATAR`. `size` is required as a query parameter to specify the size to load the image in and must an integer be between `32` and `512`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP on android.
 
 ### GET /report/:id
 
@@ -240,7 +240,7 @@ I would personally recommend having a slider on the frontend that uses a formula
 
 ### Authentication
 
-All authentication routes start with **/auth** and upon success, return a 201 status code with the following response body, except for **/auth/logout**:
+All authentication routes start with **/auth**. The user's ID can be accessed by decoding the access token and accessing the `id` value. Upon success, all authentication routes return a 201 status code with the following response body, except for **/auth/logout**:
 ```ts
 {
   accessToken: string, // JWT
