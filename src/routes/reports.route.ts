@@ -1,6 +1,6 @@
 import z from "zod";
 import type App from "@/app";
-import db, { Report, TeamNumber, User } from "@/db";
+import db, { Report, User } from "@/db";
 import { MatchType } from "@/db/prisma/enums";
 import { CoercedInt } from "@/schemas";
 
@@ -11,7 +11,7 @@ const ReportsSchema = {
     matchType: z.enum(MatchType).optional(),
     minMatchNumber: Report.CoercedMatchNumber.optional(),
     maxMatchNumber: Report.CoercedMatchNumber.optional(),
-    teamNumber: TeamNumber.optional(),
+    teamNumber: Report.CoercedTeamNumber.optional(),
     maxMinorFouls: CoercedInt.positive().optional(),
     maxMajorFouls: CoercedInt.positive().optional(),
     autoMovement: z.boolean().optional(),
@@ -22,14 +22,14 @@ const ReportsSchema = {
     teleopMaxHubMisses: CoercedInt.positive().optional(),
     endgameMinHubScore: CoercedInt.min(1).optional(),
     endgameMaxHubMisses: CoercedInt.positive().optional(),
-    take: z.int().positive(),
-    skip: z.int().positive(),
+    take: CoercedInt.positive(),
+    skip: CoercedInt.positive(),
   }),
   response: {
     200: z.array(
       z.object({
         id: z.int(),
-        teamNumber: TeamNumber,
+        teamNumber: Report.TeamNumber,
         user: z.union([User.Display, z.null()]),
       }),
     ),

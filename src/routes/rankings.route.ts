@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import z from "zod";
 import type App from "@/app";
-import db, { TeamNumber } from "@/db";
+import db, { Report } from "@/db";
 import { Response4xx } from "@/schemas";
 
 // TODO: Cache AI output
@@ -34,7 +34,7 @@ The score represents a normalized estimate of expected match impact relative to 
 const AIRankings = z
   .array(
     z.object({
-      teamNumber: TeamNumber.describe(
+      teamNumber: Report.TeamNumber.describe(
         "FRC team number. Positive integer uniquely identifying the team.",
       ),
       score: z
@@ -109,7 +109,8 @@ export default async function rankings(app: App) {
       },
     });
     if (!response.output_parsed) {
-      return reply.code(502).send();
+      return reply.code(502);
     }
+    return response.output_parsed;
   });
 }

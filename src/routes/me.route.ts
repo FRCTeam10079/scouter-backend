@@ -64,7 +64,6 @@ export default async function me(app: App) {
   });
 
   app.patch("/me", { schema: MePatchSchema }, async (req, reply) => {
-    throw "bad";
     const parts: Record<string, unknown> = {};
     for await (const part of req.parts()) {
       if (parts[part.fieldname] === undefined) {

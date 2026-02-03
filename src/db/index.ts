@@ -22,12 +22,12 @@ export namespace User {
   });
 }
 
-export const TeamNumber = z.int().min(1).max(20000);
-
 export namespace Report {
   export const EventCode = z.string().length(5);
   export const MatchNumber = z.int().min(1).max(200);
   export const CoercedMatchNumber = CoercedInt.min(1).max(200);
+  export const TeamNumber = z.int().min(1).max(20000);
+  export const CoercedTeamNumber = CoercedInt.min(1).max(20000);
   export const Notes = z.string().max(400);
 
   export const Auto = z.object({

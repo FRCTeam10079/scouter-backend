@@ -13,6 +13,6 @@ const LogoutSchema = {
 export default async function logout(app: App) {
   app.delete("/logout", { schema: LogoutSchema }, async (req, reply) => {
     await db.refreshToken.delete({ where: { value: req.body } });
-    reply.code(204).send();
+    reply.code(204);
   });
 }

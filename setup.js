@@ -7,11 +7,7 @@ const isProduction = process.argv.includes("--prod");
 
 console.log("Setting up...");
 
-try {
-  fs.mkdirSync("avatars");
-} catch {
-  // Do nothing if the folder already exists.
-}
+fs.mkdirSync("avatars");
 
 try {
   execSync("pnpm -v");

@@ -1,6 +1,6 @@
 import z from "zod";
 import type App from "@/app";
-import db, { Report, TeamNumber, User } from "@/db";
+import db, { Report, User } from "@/db";
 import { MatchType } from "@/db/prisma/enums";
 import { Response4xx } from "@/schemas";
 
@@ -15,7 +15,7 @@ const ReportGetSchema = {
       eventCode: z.string(),
       matchType: z.enum(MatchType),
       matchNumber: Report.MatchNumber,
-      teamNumber: TeamNumber,
+      teamNumber: Report.TeamNumber,
       notes: z.string(),
       minorFouls: z.int().positive(),
       majorFouls: z.int().positive(),
@@ -33,7 +33,7 @@ const ReportPostSchema = {
     eventCode: Report.EventCode,
     matchType: z.enum(MatchType),
     matchNumber: z.int().min(1).max(200),
-    teamNumber: TeamNumber,
+    teamNumber: Report.TeamNumber,
     notes: z.string().max(400),
     minorFouls: z.int().positive(),
     majorFouls: z.int().positive(),
@@ -116,6 +116,6 @@ export default async function report(app: App) {
         endgameLevel: req.body.endgame.level,
       },
     });
-    reply.code(201).send();
+    reply.code(201);
   });
 }

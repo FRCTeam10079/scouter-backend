@@ -76,7 +76,6 @@ Returns basic information about the user. If the account has been deleted, a 410
   username: string,
   firstName: string,
   lastName: string,
-  avatarPath: string,
 }
 ```
 
