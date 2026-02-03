@@ -4,7 +4,7 @@ import db, { Report, User } from "@/db";
 import { MatchType } from "@/db/prisma/enums";
 import { CoercedInt } from "@/schemas";
 
-const ReportsSchema = {
+const GetSchema = {
   querystring: z.object({
     userId: CoercedInt.positive().optional(),
     eventCode: Report.EventCode.optional(),
@@ -37,7 +37,7 @@ const ReportsSchema = {
 };
 
 export default async function reports(app: App) {
-  app.get("/reports", { schema: ReportsSchema }, async (req) => {
+  app.get("/reports", { schema: GetSchema }, async (req) => {
     return await db.report.findMany({
       where: {
         userId: req.query.userId,

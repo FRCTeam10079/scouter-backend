@@ -2,13 +2,13 @@ import type App from "@/app";
 import db from "@/db";
 import { AuthTokensResponse, issueAuthTokens, RefreshToken } from ".";
 
-const RefreshSchema = {
+const PostSchema = {
   body: RefreshToken,
   response: AuthTokensResponse,
 };
 
 export default async function refresh(app: App) {
-  app.post("/refresh", { schema: RefreshSchema }, async (req, reply) => {
+  app.post("/refresh", { schema: PostSchema }, async (req, reply) => {
     const storedRefreshToken = await db.refreshToken.findUnique({
       where: { value: req.body },
       select: { expiresAt: true, userId: true },

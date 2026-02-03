@@ -124,11 +124,11 @@ Returns a scouting report. `id` must be an unsigned integer. If the report does 
   createdAt: string, // ISO 8601 date-time
   eventCode: string,
   matchType: "QUALIFICATION" | "PLAYOFF",
-  matchNumber: number, // integer
+  matchNumber: number, // integer 1-200
   teamNumber: number, // integer 1-20000
   notes: string,
-  minorFouls: number, // integer
-  majorFouls: number, // integer
+  minorFouls: number, // unsigned integer
+  majorFouls: number, // unsigned integer
   auto: {
     notes: string,
     movement: boolean,
@@ -194,9 +194,9 @@ Returns a list of reports. Query parameters can be used to filter the results. T
   userId?: number, // unsigned integer
   eventCode?: string, // 5 characters
   matchType?: "QUALIFICATION" | "PLAYOFF",
-  minMatchNumber?: number, // integer >=1
-  maxMatchNumber?: number, // integer >=1
-  teamNumber?: number, // 1-20000
+  minMatchNumber?: number, // integer 1-200
+  maxMatchNumber?: number, // integer 1-200
+  teamNumber?: number, // integer 1-20000
   maxMinorFouls?: number, // unsigned integer
   maxMajorFouls?: number, // unsigned integer
   autoMovement? boolean,

@@ -7,7 +7,7 @@ import { CoercedInt } from "@/schemas";
 
 export const AVATAR_STORED_SIZE = 512;
 
-const AvatarSchema = {
+const GetSchema = {
   params: z.object({
     userId: CoercedInt.positive(),
   }),
@@ -17,7 +17,7 @@ const AvatarSchema = {
 };
 
 export default function avatar(app: App) {
-  app.get("/avatar/:userId", { schema: AvatarSchema }, async (req, reply) => {
+  app.get("/avatar/:userId", { schema: GetSchema }, async (req, reply) => {
     // Stream the image while resizing it.
     const stream = fs
       .createReadStream(path.join("avatars", String(req.params.userId)))

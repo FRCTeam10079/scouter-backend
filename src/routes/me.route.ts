@@ -12,7 +12,7 @@ import db, { User } from "@/db";
 import { Response4xx } from "@/schemas";
 import { AVATAR_STORED_SIZE } from "./avatar.route";
 
-const MeGetSchema = {
+const GetSchema = {
   response: {
     200: z.object({
       username: z.string(),
@@ -23,7 +23,7 @@ const MeGetSchema = {
   },
 };
 
-const MeUpdate = z.object({
+const Update = z.object({
   username: User.Username.optional(),
   password: User.Password.optional(),
   firstName: User.FirstName.optional(),
@@ -36,14 +36,14 @@ const MeUpdate = z.object({
     .optional(),
 });
 
-const MePatchSchema = {
+const PatchSchema = {
   response: {
     204: z.null(),
     "4xx": Response4xx,
   },
 };
 
-const MeDeleteSchema = {
+const DeleteSchema = {
   response: {
     204: z.null(),
   },
@@ -52,7 +52,7 @@ const MeDeleteSchema = {
 export default async function me(app: App) {
   await app.register(fastifyMultipart);
 
-  app.get("/me", { schema: MeGetSchema }, async (req, reply) => {
+  app.get("/me", { schema: GetSchema }, async (req, reply) => {
     const user = await db.user.findUnique({
       where: { id: req.user.id },
       select: { username: true, firstName: true, lastName: true },
@@ -63,14 +63,14 @@ export default async function me(app: App) {
     return user;
   });
 
-  app.patch("/me", { schema: MePatchSchema }, async (req, reply) => {
+  app.patch("/me", { schema: PatchSchema }, async (req, reply) => {
     const parts: Record<string, unknown> = {};
     for await (const part of req.parts()) {
       if (parts[part.fieldname] === undefined) {
         parts[part.fieldname] = part.type === "field" ? part.value : part;
       }
     }
-    const dataResult = MeUpdate.safeParse(parts);
+    const dataResult = Update.safeParse(parts);
     if (dataResult.error) {
       return reply.status(400).send({ code: "INVALID_FORM_DATA" });
     }
@@ -103,7 +103,7 @@ export default async function me(app: App) {
     reply.code(204);
   });
 
-  app.delete("/me", { schema: MeDeleteSchema }, async (req, reply) => {
+  app.delete("/me", { schema: DeleteSchema }, async (req, reply) => {
     await db.user.delete({ where: { id: req.user.id } });
     const avatarPath = path.join("avatars", String(req.user.id));
     await deleteFile(avatarPath, { force: true });

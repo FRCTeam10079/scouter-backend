@@ -4,7 +4,7 @@ import type App from "@/app";
 import db, { User } from "@/db";
 import { AuthTokensResponse, issueAuthTokens } from ".";
 
-const SignUpSchema = {
+const PostSchema = {
   body: z.object({
     username: User.Username,
     password: User.Password,
@@ -18,7 +18,7 @@ const SignUpSchema = {
 export const TEAM_PASSWORD = "AlexaIsOurScoutingLead!";
 
 export default async function signUp(app: App) {
-  app.post("/sign-up", { schema: SignUpSchema }, async (req, reply) => {
+  app.post("/sign-up", { schema: PostSchema }, async (req, reply) => {
     if (req.body.teamPassword !== TEAM_PASSWORD) {
       return reply.code(401).send({ code: "INCORRECT_TEAM_PASSWORD" });
     }

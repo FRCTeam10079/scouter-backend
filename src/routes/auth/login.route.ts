@@ -4,7 +4,7 @@ import type App from "@/app";
 import db, { User } from "@/db";
 import { AuthTokensResponse, issueAuthTokens } from ".";
 
-const LoginSchema = {
+const PostSchema = {
   body: z.object({
     username: User.Username,
     password: User.Password,
@@ -13,7 +13,7 @@ const LoginSchema = {
 };
 
 export default async function login(app: App) {
-  app.post("/login", { schema: LoginSchema }, async (req, reply) => {
+  app.post("/login", { schema: PostSchema }, async (req, reply) => {
     const user = await db.user.findUnique({
       where: { username: req.body.username },
       select: { id: true, passwordHash: true },

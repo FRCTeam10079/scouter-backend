@@ -4,7 +4,7 @@ import db, { Report, User } from "@/db";
 import { MatchType } from "@/db/prisma/enums";
 import { Response4xx } from "@/schemas";
 
-const ReportGetSchema = {
+const GetSchema = {
   params: z.object({
     id: z.coerce.number().int().positive(),
   }),
@@ -27,7 +27,7 @@ const ReportGetSchema = {
   },
 };
 
-const ReportPostSchema = {
+const PostSchema = {
   body: z.object({
     createdAt: z.iso.datetime(),
     eventCode: Report.EventCode,
@@ -47,7 +47,7 @@ const ReportPostSchema = {
 };
 
 export default async function report(app: App) {
-  app.get("/report/:id", { schema: ReportGetSchema }, async (req, reply) => {
+  app.get("/report/:id", { schema: GetSchema }, async (req, reply) => {
     const report = await db.report.findUnique({
       where: { id: req.params.id },
       include: {
@@ -89,7 +89,7 @@ export default async function report(app: App) {
     };
   });
 
-  app.post("/report", { schema: ReportPostSchema }, async (req, reply) => {
+  app.post("/report", { schema: PostSchema }, async (req, reply) => {
     await db.report.create({
       data: {
         userId: req.user.id,
