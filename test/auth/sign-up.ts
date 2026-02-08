@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import * as argon2 from "@node-rs/argon2";
 import { createApp, Logger } from "@/app";
+import { TEAM_PASSWORD } from "@/auth/route";
 import prisma, { TestUser } from "@/db";
-import { TEAM_PASSWORD } from "@/routes/auth/sign-up.route";
 
 const NEW_USER = {
   username: "mr.snuggles",

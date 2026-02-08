@@ -1,17 +1,19 @@
 import z from "zod";
 import type App from "@/app";
-import db, { Report, User } from "@/db";
+import db from "@/db";
 import { MatchType } from "@/db/prisma/enums";
 import { CoercedInt } from "@/schemas";
+import * as user from "@/user/schemas";
+import * as report from "./schemas";
 
 const GetSchema = {
   querystring: z.object({
     userId: CoercedInt.positive().optional(),
-    eventCode: Report.EventCode.optional(),
+    eventCode: report.EventCode.optional(),
     matchType: z.enum(MatchType).optional(),
-    minMatchNumber: Report.CoercedMatchNumber.optional(),
-    maxMatchNumber: Report.CoercedMatchNumber.optional(),
-    teamNumber: Report.CoercedTeamNumber.optional(),
+    minMatchNumber: report.CoercedMatchNumber.optional(),
+    maxMatchNumber: report.CoercedMatchNumber.optional(),
+    teamNumber: report.CoercedTeamNumber.optional(),
     maxMinorFouls: CoercedInt.positive().optional(),
     maxMajorFouls: CoercedInt.positive().optional(),
     autoMovement: z.boolean().optional(),
@@ -28,15 +30,22 @@ const GetSchema = {
   response: {
     200: z.array(
       z.object({
-        id: z.int(),
-        teamNumber: Report.TeamNumber,
-        user: z.union([User.Display, z.null()]),
+        id: z.int().positive(),
+        teamNumber: report.TeamNumber,
+        user: z.union([user.Display, z.null()]),
       }),
     ),
   },
 };
 
-export default async function reports(app: App) {
+const PostSchema = {
+  body: z.array(report.Data),
+  response: {
+    201: z.null(),
+  },
+};
+
+export default async function route(app: App) {
   app.get("/reports", { schema: GetSchema }, async (req) => {
     return await db.report.findMany({
       where: {
@@ -68,5 +77,12 @@ export default async function reports(app: App) {
       take: req.query.take,
       skip: req.query.skip,
     });
+  });
+
+  app.post("/reports", { schema: PostSchema }, async (req, reply) => {
+    await db.report.createMany({
+      data: req.body.map((r) => report.dataToDb(r, req.user.id)),
+    });
+    reply.status(201);
   });
 }

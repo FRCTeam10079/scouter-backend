@@ -5,18 +5,18 @@ import z from "zod";
 import type App from "@/app";
 import { CoercedInt } from "@/schemas";
 
-export const AVATAR_STORED_SIZE = 512;
+export const MAX_AVATAR_SIZE = 512;
 
 const GetSchema = {
   params: z.object({
     userId: CoercedInt.positive(),
   }),
   querystring: z.object({
-    size: CoercedInt.min(32).max(AVATAR_STORED_SIZE),
+    size: CoercedInt.min(32).max(MAX_AVATAR_SIZE),
   }),
 };
 
-export default function avatar(app: App) {
+export default function route(app: App) {
   app.get("/avatar/:userId", { schema: GetSchema }, async (req, reply) => {
     // Stream the image while resizing it.
     const stream = fs

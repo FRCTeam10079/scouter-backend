@@ -8,9 +8,23 @@ import * as argon2 from "@node-rs/argon2";
 import sharp from "sharp";
 import z from "zod";
 import type App from "@/app";
-import db, { User } from "@/db";
+import db from "@/db";
 import { Response4xx } from "@/schemas";
-import { AVATAR_STORED_SIZE } from "./avatar.route";
+import { MAX_AVATAR_SIZE } from "./avatar";
+import * as user from "./schemas";
+
+const Update = z.object({
+  username: user.Username.optional(),
+  password: user.Password.optional(),
+  firstName: user.FirstName.optional(),
+  lastName: user.LastName.optional(),
+  avatar: z
+    .object({
+      file: z.instanceof(Readable),
+      mimetype: z.string().startsWith("image/"),
+    })
+    .optional(),
+});
 
 const GetSchema = {
   response: {
@@ -22,19 +36,6 @@ const GetSchema = {
     "4xx": Response4xx,
   },
 };
-
-const Update = z.object({
-  username: User.Username.optional(),
-  password: User.Password.optional(),
-  firstName: User.FirstName.optional(),
-  lastName: User.LastName.optional(),
-  avatar: z
-    .object({
-      file: z.instanceof(Readable),
-      mimetype: z.string().startsWith("image/"),
-    })
-    .optional(),
-});
 
 const PatchSchema = {
   response: {
@@ -49,7 +50,7 @@ const DeleteSchema = {
   },
 };
 
-export default async function me(app: App) {
+export default async function route(app: App) {
   await app.register(fastifyMultipart);
 
   app.get("/me", { schema: GetSchema }, async (req, reply) => {
@@ -92,8 +93,8 @@ export default async function me(app: App) {
         data.avatar.file,
         sharp()
           .resize({
-            width: AVATAR_STORED_SIZE,
-            height: AVATAR_STORED_SIZE,
+            width: MAX_AVATAR_SIZE,
+            height: MAX_AVATAR_SIZE,
             withoutEnlargement: true,
           })
           .webp(),

@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { after, test } from "node:test";
 import { createApp, Logger } from "@/app";
+import * as auth from "@/auth/schemas";
 import { TestUser } from "@/db";
-import { issueAuthTokens } from "@/routes/auth";
 
 const PORT = 8000;
 
@@ -17,7 +17,7 @@ test("PATCH /me updates the user", async () => {
   // run. It could just be that I don't know how to send form data correctly.
   await app.listen({ port: PORT });
   await app.ready();
-  const { accessToken } = await issueAuthTokens(app, userId);
+  const { accessToken } = await auth.issueTokens(app, userId);
 
   const formData = new FormData();
   formData.set("firstName", "Kiet");
