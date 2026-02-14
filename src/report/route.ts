@@ -14,11 +14,11 @@ const GetSchema = {
     200: z.object({
       user: z.union([user.Display, z.null()]),
       createdAt: z.iso.datetime(),
-      eventCode: z.string(),
+      eventCode: report.EventCode,
       matchType: z.enum(MatchType),
       matchNumber: report.MatchNumber,
       teamNumber: report.TeamNumber,
-      notes: z.string(),
+      notes: report.Notes,
       minorFouls: z.int().positive(),
       majorFouls: z.int().positive(),
       auto: report.Auto,

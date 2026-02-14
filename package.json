@@ -13,8 +13,8 @@
     "reset-db": "prisma migrate reset --force && prisma generate && prisma db seed",
     "check": "biome check",
     "fix": "biome check --write",
-    "test": "tsx --test --env-file=.env",
-    "test:watch": "tsx --test --watch --env-file=.env"
+    "test": "tsx --test --env-file=.env **/*.test.ts",
+    "test:watch": "tsx --test --watch --env-file=.env **/*.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",

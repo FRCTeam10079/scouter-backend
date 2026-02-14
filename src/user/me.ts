@@ -29,9 +29,9 @@ const Update = z.object({
 const GetSchema = {
   response: {
     200: z.object({
-      username: z.string(),
-      firstName: z.string(),
-      lastName: z.string(),
+      username: user.Username,
+      firstName: user.FirstName,
+      lastName: user.LastName,
     }),
     "4xx": Response4xx,
   },

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import { createApp, Logger } from "@/app";
-import { TestUser } from "@/db";
+import db from "@/db";
 
 const app = await createApp(Logger.TEST);
 
@@ -21,7 +21,7 @@ describe("POST /auth/login", () => {
   });
 
   it("Returns an error if the password is incorrect", async () => {
-    const response = await request(TestUser.USERNAME, "panda_express123");
+    const response = await request(db.user.test.username, "panda_express123");
     assert.strictEqual(response.statusCode, 401);
     assert.strictEqual(response.json().code, "INCORRECT_PASSWORD");
   });

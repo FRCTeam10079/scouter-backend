@@ -7,6 +7,6 @@ export const LastName = z.string().min(1).max(50);
 
 export const Display = z.object({
   id: z.int().positive(),
-  firstName: z.string(),
-  lastName: z.string(),
+  firstName: FirstName,
+  lastName: LastName,
 });

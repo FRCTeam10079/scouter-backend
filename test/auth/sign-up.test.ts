@@ -3,7 +3,7 @@ import { after, describe, it } from "node:test";
 import * as argon2 from "@node-rs/argon2";
 import { createApp, Logger } from "@/app";
 import { TEAM_PASSWORD } from "@/auth/route";
-import prisma, { TestUser } from "@/db";
+import db from "@/db";
 
 const NEW_USER = {
   username: "mr.snuggles",
@@ -22,7 +22,7 @@ describe("POST /auth/sign-up", () => {
       body: { ...NEW_USER, teamPassword: TEAM_PASSWORD },
     });
     assert.strictEqual(response.statusCode, 201);
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { username: NEW_USER.username },
     });
     assert(user);
@@ -36,7 +36,7 @@ describe("POST /auth/sign-up", () => {
       method: "POST",
       url: "/auth/sign-up",
       body: {
-        username: TestUser.USERNAME,
+        username: db.user.test.username,
         password: "food",
         firstName: "John",
         lastName: "Doe",

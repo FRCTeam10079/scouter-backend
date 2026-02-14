@@ -51,12 +51,12 @@ pnpm fix
 Runs the linter and code formatter on the project, fixing any files that can be fixed automatically.
 
 ```
-pnpm test <pattern>
+pnpm test
 ```
-Runs a specified set of tests. See https://nodejs.org/api/test.html#running-tests-from-the-command-line for possible patterns. If a pattern is not specified, all tests will be run. `pnpm reset-db` should be run before and after tests to clean up leftover data.
+Runs all tests. `pnpm reset-db` should be run before and after tests to clean up leftover data.
 
 ```
-pnpm test:watch <pattern>
+pnpm test:watch
 ```
 Does the same as `pnpm test` but with automatic reloading.
 
@@ -73,9 +73,9 @@ See https://fastify.dev/docs/latest/Reference/Errors/#fst_err_validation for gen
 Returns basic information about the user. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 200 status code is returned with the following response body:
 ```ts
 {
-  username: string,
-  firstName: string,
-  lastName: string,
+  username: string, // 1-30 characters
+  firstName: string, // 1-50 characters
+  lastName: string, // 1-50 characters
 }
 ```
 
@@ -102,8 +102,8 @@ Returns a list of users. A 200 status code is always returned with the following
 ```ts
 {
   id: number, // unsigned integer
-  firstName: string,
-  lastName: string,
+  firstName: string, // 1-30 characters
+  lastName: string, // 1-30 characters
 }[]
 ```
 
@@ -118,32 +118,32 @@ Returns a scouting report. `id` must be an unsigned integer. If the report does 
 {
   user: {
     id: number, // unsigned integer
-    firstName: string,
-    lastName: string,
+    firstName: string, // 1-30 characters
+    lastName: string, // 1-30 characters
   } | null,
   createdAt: string, // ISO 8601 date-time
-  eventCode: string,
+  eventCode: string, // 5 characters
   matchType: "QUALIFICATION" | "PLAYOFF",
   matchNumber: number, // integer 1-200
   teamNumber: number, // integer 1-20000
-  notes: string,
+  notes: string, // <=400 characters
   minorFouls: number, // unsigned integer
   majorFouls: number, // unsigned integer
   auto: {
-    notes: string,
+    notes: string, // <=400 characters
     movement: boolean,
     hubScore: number, // unsigned integer
     hubMisses: number, // unsigned integer
     level1: boolean,
   },
   teleop: {
-    notes: string,
+    notes: string, // <=400 characters
     hubScore: number, // unsigned integer
     hubMisses: number, // unsigned integer
     level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
   },
   endgame: {
-    notes: string,
+    notes: string, // <=400 characters
     hubScore: number, // unsigned integer
     hubMisses: number, // unsigned integer
     level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
@@ -218,8 +218,8 @@ A 200 status code is always returned with the following response body:
   teamNumber: number, // integer 1-20000
   user: {
     id: number, // unsigned integer
-    firstName: string,
-    lastName: string,
+    firstName: string, // 1-50 characters
+    lastName: string, // 1-50 characters
   } | null,
 }[]
 ```
@@ -243,7 +243,7 @@ All authentication routes start with **/auth**. The user's ID can be accessed by
 ```ts
 {
   accessToken: string, // JWT
-  refreshToken: string, // UUID
+  refreshToken: string, // UUID V4
 }
 ```
 

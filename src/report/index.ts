@@ -1,12 +1,10 @@
 import type App from "@/app";
 import { Prisma } from "@/db/prisma/client";
-import data from "./data";
 import rankings from "./rankings";
 import reports from "./reports";
 import report from "./route";
 
 export default async function route(app: App) {
-  await app.register(data);
   await app.register(rankings);
   await app.register(report);
   await app.register(reports);
