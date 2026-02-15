@@ -1,7 +1,6 @@
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import { MatchType } from "@/db/prisma/enums";
 import { CoercedInt, Response4xx } from "@/schemas";
 import * as user from "@/user/schemas";
 import * as report from "./schemas";
@@ -11,19 +10,8 @@ const GetSchema = {
     id: CoercedInt.positive(),
   }),
   response: {
-    200: z.object({
+    200: report.Data.extend({
       user: z.union([user.Display, z.null()]),
-      createdAt: z.iso.datetime(),
-      eventCode: report.EventCode,
-      matchType: z.enum(MatchType),
-      matchNumber: report.MatchNumber,
-      teamNumber: report.TeamNumber,
-      notes: report.Notes,
-      minorFouls: z.int().positive(),
-      majorFouls: z.int().positive(),
-      auto: report.Auto,
-      teleop: report.Teleop,
-      endgame: report.Teleop,
     }),
     "4xx": Response4xx,
   },
