@@ -1,5 +1,3 @@
-import path from "node:path";
-import fastifyAutoload from "@fastify/autoload";
 import fastifyCors from "@fastify/cors";
 import fastifyJwt from "@fastify/jwt";
 import fastify, {
@@ -18,7 +16,9 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
-import { authenticate } from "./routes/auth";
+import auth, { authenticate } from "./auth";
+import report from "./report";
+import user from "./user";
 
 type App = FastifyInstance<
   RawServerDefault,
@@ -48,14 +48,9 @@ export async function createApp(logger: Logger): Promise<App> {
     });
   }
 
-  await app.register(fastifyAutoload, {
-    dir: path.join(import.meta.dirname, "routes"),
-    // Ignore index files because they cause other plugins in the same directory
-    // to be ignored.
-    indexPattern: /$^/,
-    matchFilter: /.route\.(ts|js)$/,
-    forceESM: true,
-  });
+  await app.register(auth);
+  await app.register(report);
+  await app.register(user);
 
   return app;
 }

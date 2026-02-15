@@ -8,26 +8,16 @@ import * as argon2 from "@node-rs/argon2";
 import sharp from "sharp";
 import z from "zod";
 import type App from "@/app";
-import db, { User } from "@/db";
+import db from "@/db";
 import { Response4xx } from "@/schemas";
-import { AVATAR_STORED_SIZE } from "./avatar.route";
+import { MAX_AVATAR_SIZE } from "./avatar";
+import * as user from "./schemas";
 
-const MeGetSchema = {
-  response: {
-    200: z.object({
-      username: z.string(),
-      firstName: z.string(),
-      lastName: z.string(),
-    }),
-    "4xx": Response4xx,
-  },
-};
-
-const MeUpdate = z.object({
-  username: User.Username.optional(),
-  password: User.Password.optional(),
-  firstName: User.FirstName.optional(),
-  lastName: User.LastName.optional(),
+const Update = z.object({
+  username: user.Username.optional(),
+  password: user.Password.optional(),
+  firstName: user.FirstName.optional(),
+  lastName: user.LastName.optional(),
   avatar: z
     .object({
       file: z.instanceof(Readable),
@@ -36,23 +26,34 @@ const MeUpdate = z.object({
     .optional(),
 });
 
-const MePatchSchema = {
+const GetSchema = {
+  response: {
+    200: z.object({
+      username: user.Username,
+      firstName: user.FirstName,
+      lastName: user.LastName,
+    }),
+    "4xx": Response4xx,
+  },
+};
+
+const PatchSchema = {
   response: {
     204: z.null(),
     "4xx": Response4xx,
   },
 };
 
-const MeDeleteSchema = {
+const DeleteSchema = {
   response: {
     204: z.null(),
   },
 };
 
-export default async function me(app: App) {
+export default async function route(app: App) {
   await app.register(fastifyMultipart);
 
-  app.get("/me", { schema: MeGetSchema }, async (req, reply) => {
+  app.get("/me", { schema: GetSchema }, async (req, reply) => {
     const user = await db.user.findUnique({
       where: { id: req.user.id },
       select: { username: true, firstName: true, lastName: true },
@@ -63,15 +64,14 @@ export default async function me(app: App) {
     return user;
   });
 
-  app.patch("/me", { schema: MePatchSchema }, async (req, reply) => {
-    throw "bad";
+  app.patch("/me", { schema: PatchSchema }, async (req, reply) => {
     const parts: Record<string, unknown> = {};
     for await (const part of req.parts()) {
       if (parts[part.fieldname] === undefined) {
         parts[part.fieldname] = part.type === "field" ? part.value : part;
       }
     }
-    const dataResult = MeUpdate.safeParse(parts);
+    const dataResult = Update.safeParse(parts);
     if (dataResult.error) {
       return reply.status(400).send({ code: "INVALID_FORM_DATA" });
     }
@@ -93,8 +93,8 @@ export default async function me(app: App) {
         data.avatar.file,
         sharp()
           .resize({
-            width: AVATAR_STORED_SIZE,
-            height: AVATAR_STORED_SIZE,
+            width: MAX_AVATAR_SIZE,
+            height: MAX_AVATAR_SIZE,
             withoutEnlargement: true,
           })
           .webp(),
@@ -104,7 +104,7 @@ export default async function me(app: App) {
     reply.code(204);
   });
 
-  app.delete("/me", { schema: MeDeleteSchema }, async (req, reply) => {
+  app.delete("/me", { schema: DeleteSchema }, async (req, reply) => {
     await db.user.delete({ where: { id: req.user.id } });
     const avatarPath = path.join("avatars", String(req.user.id));
     await deleteFile(avatarPath, { force: true });

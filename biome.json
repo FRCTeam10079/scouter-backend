@@ -43,7 +43,6 @@
         "useNamingConvention": {
           "level": "on",
           "options": {
-            "strictCase": false,
             "conventions": [
               {
                 "selector": { "kind": "let" },

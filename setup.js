@@ -1,17 +1,14 @@
 import { execSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
+import { mkdir } from "node:fs/promises";
 import readline from "node:readline/promises";
 
 const isProduction = process.argv.includes("--prod");
 
 console.log("Setting up...");
 
-try {
-  fs.mkdirSync("avatars");
-} catch {
-  // Do nothing if the folder already exists.
-}
+await mkdir("avatars");
 
 try {
   execSync("pnpm -v");

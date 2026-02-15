@@ -1,9 +1,9 @@
-import OpenAI from "openai";
+import OpenAi from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import z from "zod";
 import type App from "@/app";
-import db, { TeamNumber } from "@/db";
-import { Response4xx } from "@/schemas";
+import db from "@/db";
+import * as report from "./schemas";
 
 // TODO: Cache AI output
 
@@ -31,10 +31,10 @@ The 'notes', 'autoNotes', 'teleopNotes', and 'endgameNotes' values should be use
 The score represents a normalized estimate of expected match impact relative to other teams based on the provided data. Confidence represents a normalized measure of how reliable that estimate is, based on data volume, consistency across matches and events, and agreement between quantitative metrics and qualitative notes. Confidence must not be incorporated into the score itself. Favor consistency, reliability, and low risk over single-match peak performance. Penalize volatility, repeated penalties, and unreliable climbs. When data is limited or contradictory, reason conservatively and reflect lower confidence. All evaluations must be derived strictly from the provided JSON data, and missing information must not be invented.\
 `;
 
-const AIRankings = z
+const Rankings = z
   .array(
     z.object({
-      teamNumber: TeamNumber.describe(
+      teamNumber: report.TeamNumber.describe(
         "FRC team number. Positive integer uniquely identifying the team.",
       ),
       score: z
@@ -62,40 +62,19 @@ const AIRankings = z
     "Collection of team evaluations for a single event. Each entry represents a unique team and includes a normalized score, confidence, and qualitative overview. Ordering is not guaranteed and should not be relied upon.",
   );
 
-const RankingsSchema = {
+const GetSchema = {
   response: {
-    200: AIRankings,
-    502: Response4xx,
+    200: Rankings,
+    502: z.null(),
   },
 };
 
-const openai = new OpenAI();
+const openai = new OpenAi();
 
-export default async function rankings(app: App) {
-  app.get("/rankings", { schema: RankingsSchema }, async (_, reply) => {
+export default async function route(app: App) {
+  app.get("/rankings", { schema: GetSchema }, async (_, reply) => {
     const reports = await db.report.findMany({
-      select: {
-        createdAt: true,
-        matchType: true,
-        matchNumber: true,
-        teamNumber: true,
-        notes: true,
-        minorFouls: true,
-        majorFouls: true,
-        autoNotes: true,
-        autoMovement: true,
-        autoHubScore: true,
-        autoHubMisses: true,
-        autoLevel1: true,
-        teleopNotes: true,
-        teleopHubScore: true,
-        teleopHubMisses: true,
-        teleopLevel: true,
-        endgameNotes: true,
-        endgameHubScore: true,
-        endgameHubMisses: true,
-        endgameLevel: true,
-      },
+      omit: { id: true, userId: true },
     });
     const response = await openai.responses.parse({
       model: "gpt-5",
@@ -105,11 +84,12 @@ export default async function rankings(app: App) {
         { role: "user", content: JSON.stringify(reports) },
       ],
       text: {
-        format: zodTextFormat(AIRankings, "rankings"),
+        format: zodTextFormat(Rankings, "rankings"),
       },
     });
     if (!response.output_parsed) {
-      return reply.code(502).send();
+      return reply.code(502);
     }
+    return response.output_parsed;
   });
 }
