@@ -101,7 +101,7 @@ Deletes the user's account. A 204 status code is always returned.
 Returns a list of users. A 200 status code is always returned with the following response body:
 ```ts
 {
-  id: number, // unsigned integer
+  id: number, // positive integer
   firstName: string, // 1-30 characters
   lastName: string, // 1-30 characters
 }[]
@@ -109,15 +109,15 @@ Returns a list of users. A 200 status code is always returned with the following
 
 ### GET /avatar/:userId
 
-Returns the specified user's avatar. `userId` must be an unsigned integer. If the user does not have a profile picture or their account has been deleted, a 404 status code is returned with `code` set to `NO_SUCH_AVATAR`. `size` is required as a query parameter to specify the size to load the image in and must an integer be between `32` and `512`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP on android.
+Returns the specified user's avatar. `userId` must be an positive integer. If the user does not have a profile picture or their account has been deleted, a 404 status code is returned with `code` set to `NO_SUCH_AVATAR`. `size` is required as a query parameter to specify the size to load the image in and must an integer be between `32` and `512`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP on android.
 
 ### GET /report/:id
 
-Returns a scouting report. `id` must be an unsigned integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
+Returns a scouting report. `id` must be an positive integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
 ```ts
 {
   user: {
-    id: number, // unsigned integer
+    id: number, // positive integer
     firstName: string, // 1-30 characters
     lastName: string, // 1-30 characters
   } | null,
@@ -127,26 +127,34 @@ Returns a scouting report. `id` must be an unsigned integer. If the report does 
   matchNumber: number, // integer 1-200
   teamNumber: number, // integer 1-20000
   notes: string, // <=400 characters
-  minorFouls: number, // unsigned integer
-  majorFouls: number, // unsigned integer
+  minorFouls: number, // positive integer
+  majorFouls: number, // positive integer
+  secondsIncapacitated: number, // positive integer
+  overBump: boolean,
+  underTrench: boolean,
+  startingPosition: "LEFT" | "CENTER" | "RIGHT",
   auto: {
     notes: string, // <=400 characters
-    movement: boolean,
-    hubScore: number, // unsigned integer
-    hubMisses: number, // unsigned integer
-    level1: boolean,
+    hubScores: number, // positive integer
+    hubMisses: number, // positive integer
+    climb: "NONE" | "LEVEL1" | "FAILED",
+    collectDepot: boolean,
+    collectNeutral: boolean,
+    collectOutpost: boolean,
+    disruptNz: boolean,
+    passes: number, // positive integer
   },
   teleop: {
     notes: string, // <=400 characters
-    hubScore: number, // unsigned integer
-    hubMisses: number, // unsigned integer
-    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
+    hubScores: number, // positive integer
+    hubMisses: number, // positive integer
+    level: number, // positive integer <=3
+    climbFailed: boolean,
   },
   endgame: {
     notes: string, // <=400 characters
-    hubScore: number, // unsigned integer
-    hubMisses: number, // unsigned integer
-    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
+    level: number, // positive integer <=3
+    climbFailed: boolean,
   },
 }
 ```
@@ -162,26 +170,34 @@ Creates a scouting report. A 201 status code is always returned. The following r
   matchNumber: number, // integer 1-200
   teamNumber: number, // integer 1-20000
   notes: string, // <=400 characters
-  minorFouls: number, // unsigned integer
-  majorFouls: number, // unsigned integer
+  minorFouls: number, // positive integer
+  majorFouls: number, // positive integer
+  secondsIncapacitated: number, // positive integer
+  overBump: boolean,
+  underTrench: boolean,
+  startingPosition: "LEFT" | "CENTER" | "RIGHT",
   auto: {
     notes: string, // <=400 characters
-    movement: boolean,
-    hubScore: number, // unsigned integer
-    hubMisses: number, // unsigned integer
-    level1: boolean,
+    hubScores: number, // positive integer
+    hubMisses: number, // positive integer
+    climb: "NONE" | "LEVEL1" | "FAILED",
+    collectDepot: boolean,
+    collectNeutral: boolean,
+    collectOutpost: boolean,
+    disruptNz: boolean,
+    passes: number, // positive integer
   },
   teleop: {
     notes: string, // <=400 characters
-    hubScore: number, // unsigned integer
-    hubMisses: number, // unsigned integer
-    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
+    hubScores: number, // positive integer
+    hubMisses: number, // positive integer
+    level: number, // positive integer <=3
+    climbFailed: boolean,
   },
   endgame: {
     notes: string, // <=400 characters
-    hubScore: number, // unsigned integer
-    hubMisses: number, // unsigned integer
-    level: "ONE" | "TWO" | "THREE" | "FAILED" | null,
+    level: number, // positive integer <=3
+    climbFailed: boolean,
   },
 }
 ```
@@ -191,33 +207,47 @@ Creates a scouting report. A 201 status code is always returned. The following r
 Returns a list of reports. Query parameters can be used to filter the results. The following schema is used for query parameters:
 ```ts
 {
-  userId?: number, // unsigned integer
+  userId?: number, // positive integer
   eventCode?: string, // 5 characters
   matchType?: "QUALIFICATION" | "PLAYOFF",
   minMatchNumber?: number, // integer 1-200
   maxMatchNumber?: number, // integer 1-200
   teamNumber?: number, // integer 1-20000
-  maxMinorFouls?: number, // unsigned integer
-  maxMajorFouls?: number, // unsigned integer
-  autoMovement? boolean,
-  autoMinHubScore?: number, // integer >=1
+  maxMinorFouls?: number, // positive integer
+  maxMajorFouls?: number, // positive integer
+  maxSecondsIncapacitated?: number, // positive integer
+  overBump?: boolean,
+  underTrench?: boolean,
+  startingPosition?: "LEFT" | "CENTER" | "RIGHT" | ("LEFT" | "CENTER" | "RIGHT")[],
+
+  autoMinHubScores?: number, // integer >=1
   autoMaxHubMisses?: number, // integer >=1
   autoLevel1?: boolean,
-  teleopMinHubScore?: number, // integer >=1
+  autoCollectDepot?: boolean,
+  autoCollectNeutral?: boolean,
+  autoCollectOutpost?: boolean,
+  autoDidNotDisruptNz?: boolean,
+  autoMinPasses?: number, // integer >=1
+
+  teleopMinHubScores?: number, // integer >=1
   teleopMaxHubMisses?: number, // integer >=1
-  endgameMinHubScore?: number, // integer >=1
-  endgameMaxHubMisses?: number, // integer >=1
-  take: number, // unsigned integer - return N reports
-  skip: number, // unsigned integer - skip first N reports
+  teleopMinLevel?: number, // integer 1-3
+  teleopClimbSucceeded?: boolean,
+
+  endgameMinLevel?: number, // integer 1-3
+  endgameClimbSucceeded?: boolean,
+
+  take: number, // positive integer - return N reports
+  skip: number, // positive integer - skip first N reports
 }
 ```
 A 200 status code is always returned with the following response body:
 ```ts
 {
-  id: number, // unsigned integer
+  id: number, // positive integer
   teamNumber: number, // integer 1-20000
   user: {
-    id: number, // unsigned integer
+    id: number, // positive integer
     firstName: string, // 1-50 characters
     lastName: string, // 1-50 characters
   } | null,
@@ -233,6 +263,37 @@ Returns team ranking data using the OpenAI API. Upon success, a 200 status code 
   score: number, // 0-1 - aggregate score
   confidence: number, // 0-1
   overview: string, // Markdown
+  avg: {
+    minorFouls: number, // positive
+    majorFouls: number, // positive
+    secondsIncapacitated: number, // positive
+    overBump: number, // 0-1
+    underTrench: number, // 0-1
+    auto: {
+      hubScores: number, // positive
+      hubMisses: number, // positive
+      climb: {
+        none: number, // 0-1
+        level1: number, // 0-1
+        failed: number, // 0-1
+      },
+      collectDepot: number, // 0-1
+      collectNeutral: number, // 0-1
+      collectOutpost: number, // 0-1
+      disruptNz: number, // 0-1
+      passes: number, // positive
+    },
+    teleop: {
+      hubScores: number, // positive
+      hubMisses: number, // positive
+      level: number, // 0-1
+      climbFailed: number, // 0-1
+    },
+    endgame: {
+      level: number, // 0-1
+      climbFailed: number, // 0-1
+    },
+  },
 }[] // unsorted array
 ```
 I would personally recommend having a slider on the frontend that uses a formula like $score\times(n^2+(1-n^2)\times confidence)$ to rank teams with a default value around $0.7$.

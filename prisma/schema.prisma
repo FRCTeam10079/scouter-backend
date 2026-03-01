@@ -25,30 +25,41 @@ model RefreshToken {
 }
 
 model Report {
-  id               Int       @id @default(autoincrement())
-  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId           Int?
-  createdAt        DateTime
-  eventCode        String    @db.Char(5)
-  matchType        MatchType
-  matchNumber      Int       @db.SmallInt
-  teamNumber       Int       @db.SmallInt
-  notes            String    @db.VarChar(400)
-  minorFouls       Int       @db.SmallInt
-  majorFouls       Int       @db.SmallInt
-  autoNotes        String    @db.VarChar(400)
-  autoMovement     Boolean
-  autoHubScore     Int       @db.SmallInt
-  autoHubMisses    Int       @db.SmallInt
-  autoLevel1       Boolean
-  teleopNotes      String    @db.VarChar(400)
-  teleopHubScore   Int       @db.SmallInt
-  teleopHubMisses  Int       @db.SmallInt
-  teleopLevel      Level?
-  endgameNotes     String    @db.VarChar(400)
-  endgameHubScore  Int       @db.SmallInt
-  endgameHubMisses Int       @db.SmallInt
-  endgameLevel     Level?
+  id                   Int              @id @default(autoincrement())
+  user                 User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId               Int?
+  createdAt            DateTime
+  eventCode            String           @db.Char(5)
+  matchType            MatchType
+  matchNumber          Int              @db.SmallInt
+  teamNumber           Int              @db.SmallInt
+  notes                String           @db.VarChar(400)
+  minorFouls           Int              @db.SmallInt
+  majorFouls           Int              @db.SmallInt
+  secondsIncapacitated Int              @db.SmallInt
+  overBump             Boolean
+  underTrench          Boolean
+  startingPosition     StartingPosition
+
+  autoNotes          String    @db.VarChar(400)
+  autoHubScores      Int       @db.SmallInt
+  autoHubMisses      Int       @db.SmallInt
+  autoClimb          AutoClimb
+  autoCollectDepot   Boolean
+  autoCollectNeutral Boolean
+  autoCollectOutpost Boolean
+  autoDisruptNz      Boolean
+  autoPasses         Int       @db.SmallInt
+
+  teleopNotes       String  @db.VarChar(400)
+  teleopHubScores   Int     @db.SmallInt
+  teleopHubMisses   Int     @db.SmallInt
+  teleopLevel       Int     @db.SmallInt
+  teleopClimbFailed Boolean
+
+  endgameNotes       String  @db.VarChar(400)
+  endgameLevel       Int     @default(0) @db.SmallInt
+  endgameClimbFailed Boolean
 }
 
 enum MatchType {
@@ -56,9 +67,14 @@ enum MatchType {
   PLAYOFF
 }
 
-enum Level {
-  ONE
-  TWO
-  THREE
+enum StartingPosition {
+  LEFT
+  CENTER
+  RIGHT
+}
+
+enum AutoClimb {
+  NONE
+  LEVEL1
   FAILED
 }

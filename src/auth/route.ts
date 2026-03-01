@@ -31,8 +31,8 @@ const SignUpSchema = {
   body: z.object({
     username: user.Username,
     password: user.Password,
-    firstName: user.FirstName,
-    lastName: user.LastName,
+    firstName: user.Name,
+    lastName: user.Name,
     teamPassword: z.string().min(1),
   }),
   response: auth.TokensResponse,

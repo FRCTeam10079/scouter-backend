@@ -1,32 +1,25 @@
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import { CoercedInt, Response4xx } from "@/schemas";
 import * as report from "./schemas";
 
 const GetSchema = {
-  params: z.object({
-    id: CoercedInt.positive(),
-  }),
   response: {
-    200: report.Report,
-    "4xx": Response4xx,
+    200: z.array(report.Data),
   },
 };
 
 const PostSchema = {
-  body: report.Data,
+  body: z.array(report.Data.extend({ userId: z.int().positive() })),
   response: {
     201: z.null(),
   },
 };
 
 export default async function route(app: App) {
-  app.get("/report/:id", { schema: GetSchema }, async (req, reply) => {
-    const report = await db.report.findUnique({
-      where: { id: req.params.id },
+  app.get("/reports/data", { schema: GetSchema }, async () => {
+    const reports = await db.report.findMany({
       select: {
-        user: { select: { id: true, firstName: true, lastName: true } },
         createdAt: true,
         eventCode: true,
         matchType: true,
@@ -44,19 +37,16 @@ export default async function route(app: App) {
         endgame: true,
       },
     });
-    if (!report) {
-      return reply.code(404).send({ code: "REPORT_NOT_FOUND" });
-    }
-    return {
+    return reports.map((report) => ({
       ...report,
       createdAt: report.createdAt.toISOString(),
-    };
+    }));
   });
 
-  app.post("/report", { schema: PostSchema }, async (req, reply) => {
-    await db.report.create({
-      data: report.dataToDb(req.body, req.user.id),
+  app.post("/reports/data", { schema: PostSchema }, async (req, reply) => {
+    await db.report.createMany({
+      data: req.body.map((r) => report.dataToDb(r, r.userId)),
     });
-    reply.code(201);
+    reply.status(201);
   });
 }

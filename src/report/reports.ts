@@ -1,7 +1,7 @@
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import { MatchType } from "@/db/prisma/enums";
+import { AutoClimb, MatchType, StartingPosition } from "@/db/prisma/enums";
 import { CoercedInt } from "@/schemas";
 import * as user from "@/user/schemas";
 import * as report from "./schemas";
@@ -16,14 +16,30 @@ const GetSchema = {
     teamNumber: report.CoercedTeamNumber.optional(),
     maxMinorFouls: CoercedInt.positive().optional(),
     maxMajorFouls: CoercedInt.positive().optional(),
-    autoMovement: z.boolean().optional(),
-    autoMinHubScore: CoercedInt.min(1).optional(),
+    maxSecondsIncapacitated: CoercedInt.positive().optional(),
+    overBump: z.boolean().optional(),
+    underTrench: z.boolean().optional(),
+    startingPosition: z
+      .union([z.enum(StartingPosition), z.array(z.enum(StartingPosition))])
+      .optional(),
+
+    autoMinHubScores: CoercedInt.min(1).optional(),
     autoMaxHubMisses: CoercedInt.positive().optional(),
     autoLevel1: z.boolean().optional(),
-    teleopMinHubScore: CoercedInt.min(1).optional(),
+    autoCollectDepot: z.boolean().optional(),
+    autoCollectNeutral: z.boolean().optional(),
+    autoCollectOutpost: z.boolean().optional(),
+    autoDidNotDisruptNz: z.boolean().optional(),
+    autoMinPasses: CoercedInt.min(1).optional(),
+
+    teleopMinHubScores: CoercedInt.min(1).optional(),
     teleopMaxHubMisses: CoercedInt.positive().optional(),
-    endgameMinHubScore: CoercedInt.min(1).optional(),
-    endgameMaxHubMisses: CoercedInt.positive().optional(),
+    teleopMinLevel: CoercedInt.min(1).optional(),
+    teleopClimbSucceeded: z.boolean().optional(),
+
+    endgameMinLevel: CoercedInt.min(1).optional(),
+    endgameClimbSucceeded: z.boolean().optional(),
+
     take: CoercedInt.positive(),
     skip: CoercedInt.positive(),
   }),
@@ -59,14 +75,36 @@ export default async function route(app: App) {
         teamNumber: req.query.teamNumber,
         minorFouls: { lte: req.query.maxMinorFouls },
         majorFouls: { lte: req.query.maxMajorFouls },
-        autoMovement: req.query.autoMovement,
-        autoHubScore: { gte: req.query.autoMinHubScore },
+        secondsIncapacitated: { lte: req.query.maxSecondsIncapacitated },
+        overBump: req.query.overBump,
+        underTrench: req.query.underTrench,
+        startingPosition:
+          typeof req.query.startingPosition === "string"
+            ? req.query.startingPosition
+            : { in: req.query.startingPosition },
+
+        autoHubScores: { gte: req.query.autoMinHubScores },
         autoHubMisses: { lte: req.query.autoMaxHubMisses },
-        autoLevel1: req.query.autoLevel1,
-        teleopHubScore: { gte: req.query.teleopMinHubScore },
+        autoClimb: req.query.autoLevel1 ? AutoClimb.LEVEL1 : undefined,
+        autoCollectDepot: req.query.autoCollectDepot,
+        autoCollectNeutral: req.query.autoCollectNeutral,
+        autoCollectOutpost: req.query.autoCollectOutpost,
+        autoDisruptNz: req.query.autoDidNotDisruptNz,
+        autoPasses: { gte: req.query.autoMinPasses },
+
+        teleopHubScores: { gte: req.query.teleopMinHubScores },
         teleopHubMisses: { lte: req.query.teleopMaxHubMisses },
-        endgameHubScore: { gte: req.query.endgameMinHubScore },
-        endgameHubMisses: { lte: req.query.endgameMaxHubMisses },
+        teleopLevel: { gte: req.query.teleopMinLevel },
+        teleopClimbFailed:
+          req.query.teleopClimbSucceeded !== undefined
+            ? !req.query.teleopClimbSucceeded
+            : undefined,
+
+        endgameLevel: { gte: req.query.endgameMinLevel },
+        endgameClimbFailed:
+          req.query.endgameClimbSucceeded !== undefined
+            ? !req.query.endgameClimbSucceeded
+            : undefined,
       },
       select: {
         id: true,

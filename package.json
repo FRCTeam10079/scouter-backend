@@ -7,14 +7,14 @@
   "scripts": {
     "setup": "node setup.js",
     "setup:prod": "node setup.js --prod",
-    "dev": "tsx watch --env-file=.env src/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx watch --env-file=.env src/index.ts",
     "build": "tsc -p tsconfig.prod.json && tsc-alias -p tsconfig.prod.json",
-    "start": "node --env-file=.env build/index.js",
+    "start": "cross-env NODE_ENV=production node --env-file=.env build/index.js",
     "reset-db": "prisma migrate reset --force && prisma generate && prisma db seed",
     "check": "biome check",
     "fix": "biome check --write",
-    "test": "tsx --test --env-file=.env **/*.test.ts",
-    "test:watch": "tsx --test --watch --env-file=.env **/*.test.ts"
+    "test": "cross-env NODE_ENV=test tsx --test --env-file=.env **/*.test.ts",
+    "test:watch": "cross-env NODE_ENV=test tsx --test --watch --env-file=.env **/*.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
@@ -36,6 +36,7 @@
     "@biomejs/biome": "^2.3.14",
     "@types/node": "^25.2.2",
     "@types/pg": "^8.16.0",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.4",
     "node-cron": "^4.2.1",
     "prisma": "^7.3.0",
