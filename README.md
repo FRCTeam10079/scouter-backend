@@ -64,7 +64,9 @@ Does the same as `pnpm test` but with automatic reloading.
 
 Note that any route could return a 5XX status code. All 4XX status codes have the following response body where `code` is a SCREAMING_SNAKE_CASE error code:
 ```ts
-{ code: string }
+type Schema = {
+  code: string;
+};
 ```
 See https://fastify.dev/docs/latest/Reference/Errors/#fst_err_validation for generic error codes. Routes that are not for authentication require the Authorization header to be set with a valid bearer token. See https://github.com/fastify/fastify-jwt?tab=readme-ov-file#error-code for possible error codes.
 
@@ -72,24 +74,24 @@ See https://fastify.dev/docs/latest/Reference/Errors/#fst_err_validation for gen
 
 Returns basic information about the user. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 200 status code is returned with the following response body:
 ```ts
-{
+type Schema = {
   username: string; // 1-30 characters
   firstName: string; // 1-50 characters
   lastName: string; // 1-50 characters
-}
+};
 ```
 
 ### PATCH /me
 
 Updates the user's profile and settings. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 400 status code is returned with `code` set to `INVALID_FORM_DATA`. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 204 status code is returned. The following schema is used for form data:
 ```ts
-{
+type Schema = {
   username?: string; // 1-30 characters
   password?: string; // 1-50 characters
   firstName?: string; // 1-50 characters
   lastName?: string; // <=50 characters
   avatar?: File; // image
-}
+};
 ```
 
 ### DELETE /me
@@ -100,11 +102,11 @@ Deletes the user's account. A 204 status code is always returned.
 
 Returns a list of users. A 200 status code is always returned with the following response body:
 ```ts
-{
+type Schema = {
   id: number; // unsigned integer
   firstName: string; // 1-30 characters
   lastName: string; // 1-30 characters
-}[]
+}[];
 ```
 
 ### GET /avatar/:userId
@@ -144,12 +146,12 @@ type ReportData = {
     notes: string; // <=400 characters
     hubScores: number; // unsigned integer
     hubMisses: number; // unsigned integer
-    level: number; // unsigned integer <=3
+    level: number; // unsigned integer <=3 - zero means the robot did not climb
     climbFailed: boolean;
   };
   endgame: {
     notes: string; // <=400 characters
-    level: number; // unsigned integer <=3
+    level: number; // unsigned integer <=3 - zero means the robot did not climb
     climbFailed: boolean;
   };
 };
@@ -159,13 +161,13 @@ type ReportData = {
 
 Returns a scouting report. `id` must be an unsigned integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
 ```ts
-ReportData & {
+type Schema = ReportData & {
   user: {
     id: number; // unsigned integer
     firstName: string; // 1-30 characters
     lastName: string; // 1-30 characters
   } | null;
-}
+};
 ```
 
 #### POST /report
@@ -176,7 +178,7 @@ Creates a scouting report. A 201 status code is always returned. `ReportData` is
 
 Returns a list of reports. Query parameters can be used to filter the results. The following schema is used for query parameters:
 ```ts
-{
+type Schema = {
   userId?: number; // unsigned integer
   eventCode?: string; // 5 characters
   matchType?: "QUALIFICATION" | "PLAYOFF";
@@ -209,11 +211,11 @@ Returns a list of reports. Query parameters can be used to filter the results. T
 
   take: number; // unsigned integer - return N reports
   skip: number; // unsigned integer - skip first N reports
-}
+};
 ```
 A 200 status code is always returned with the following response body:
 ```ts
-{
+type Schema = {
   id: number; // unsigned integer
   teamNumber: number; // integer 1-20000
   user: {
@@ -221,7 +223,7 @@ A 200 status code is always returned with the following response body:
     firstName: string; // 1-50 characters
     lastName: string; // 1-50 characters
   } | null;
-}[]
+}[];
 ```
 
 #### GET /reports/data
@@ -232,52 +234,54 @@ Returns the data for every report so it can be downloaded before an event and us
 
 Uploads reports en masse. This route is intended for use with the device used to collect QR codes. The following request body schema is used:
 ```ts
-(ReportData & {
+type Schema = (ReportData & {
   userId: number; // unsigned integer
-})[]
+})[];
 ```
 
 #### GET /rankings
 
 Returns team ranking data using the OpenAI API. Upon success, a 200 status code is returned with the following response body:
 ```ts
-{
-  teamNumber: number; // integer 1-20000
-  score: number; // 0-1 - aggregate score
-  confidence: number; // 0-1
-  overview: string; // Markdown
-  avg: {
-    minorFouls: number; // unsigned
-    majorFouls: number; // unsigned
-    secondsIncapacitated: number; // unsigned
-    overBump: number; // 0-1
-    underTrench: number; // 0-1
-    auto: {
-      hubScores: number; // unsigned
-      hubMisses: number; // unsigned
-      climb: {
-        none: number; // 0-1
-        level1: number; // 0-1
-        failed: number; // 0-1
+type Schema = Record<
+  number,
+  {
+    score: number; // 0-1 - aggregate score
+    confidence: number; // 0-1
+    overview: string; // Markdown
+    avg: {
+      minorFouls: number; // unsigned
+      majorFouls: number; // unsigned
+      secondsIncapacitated: number; // unsigned
+      overBump: number; // 0-1
+      underTrench: number; // 0-1
+      auto: {
+        hubScores: number; // unsigned
+        hubMisses: number; // unsigned
+        climb: {
+          none: number; // 0-1
+          level1: number; // 0-1
+          failed: number; // 0-1
+        };
+        collectDepot: number; // 0-1
+        collectNeutral: number; // 0-1
+        collectOutpost: number; // 0-1
+        disruptNz: number; // 0-1
+        passes: number; // unsigned
       };
-      collectDepot: number; // 0-1
-      collectNeutral: number; // 0-1
-      collectOutpost: number; // 0-1
-      disruptNz: number; // 0-1
-      passes: number; // unsigned
+      teleop: {
+        hubScores: number; // unsigned
+        hubMisses: number; // unsigned
+        level: number; // 0-1
+        climbFailed: number; // 0-1
+      };
+      endgame: {
+        level: number; // 0-1
+        climbFailed: number; // 0-1
+      };
     };
-    teleop: {
-      hubScores: number; // unsigned
-      hubMisses: number; // unsigned
-      level: number; // 0-1
-      climbFailed: number; // 0-1
-    };
-    endgame: {
-      level: number; // 0-1
-      climbFailed: number; // 0-1
-    };
-  };
-}[] // unsorted array
+  }
+>;
 ```
 I would personally recommend having a slider on the frontend that uses a formula like $score\times(n^2+(1-n^2)\times confidence)$ to rank teams with a default value around $0.7$.
 
@@ -285,33 +289,33 @@ I would personally recommend having a slider on the frontend that uses a formula
 
 All authentication routes start with **/auth**. The user's ID can be accessed by decoding the access token and accessing the `id` value. Upon success, all authentication routes return a 201 status code with the following response body, except for **/auth/logout**:
 ```ts
-{
+type Schema = {
   accessToken: string; // JWT
   refreshToken: string; // UUID V4
-}
+};
 ```
 
 #### POST /auth/sign-up
 
 Creates an account. If the team password is not "AlexaIsOurScoutingLead!", a 401 status code is returned with `code` set to `INCORRECT_TEAM_PASSWORD`. If the username is taken, a 409 status code is returned with `code` set to `USERNAME_TAKEN`. The following request body schema is used:
 ```ts
-{
+type Schema = {
   username: string; // 1-30 characters
   password: string; // 1-50 characters
   firstName: string; // 1-50 characters
   lastName: string; // <=50 characters
   teamPassword: string; // >=1 character
-}
+};
 ```
 
 #### POST /auth/login
 
 Logs the user in. If the user does not exist, a 401 status code is returned with `code` set to `NO_SUCH_USER`. If the password is incorrect, a 401 status code is returned with `code` set to `INCORRECT_PASSWORD`. The following request body schema is used:
 ```ts
-{
+type Schema = {
   username: string; // 1-30 characters
   password: string; // 1-50 characters
-}
+};
 ```
 
 #### POST /auth/logout
