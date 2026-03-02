@@ -73,9 +73,9 @@ See https://fastify.dev/docs/latest/Reference/Errors/#fst_err_validation for gen
 Returns basic information about the user. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 200 status code is returned with the following response body:
 ```ts
 {
-  username: string, // 1-30 characters
-  firstName: string, // 1-50 characters
-  lastName: string, // 1-50 characters
+  username: string; // 1-30 characters
+  firstName: string; // 1-50 characters
+  lastName: string; // 1-50 characters
 }
 ```
 
@@ -84,11 +84,11 @@ Returns basic information about the user. If the account has been deleted, a 410
 Updates the user's profile and settings. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 400 status code is returned with `code` set to `INVALID_FORM_DATA`. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 204 status code is returned. The following schema is used for form data:
 ```ts
 {
-  username?: string, // 1-30 characters
-  password?: string, // 1-50 characters
-  firstName?: string, // 1-50 characters
-  lastName?: string, // <=50 characters
-  avatar?: File, // image
+  username?: string; // 1-30 characters
+  password?: string; // 1-50 characters
+  firstName?: string; // 1-50 characters
+  lastName?: string; // <=50 characters
+  avatar?: File; // image
 }
 ```
 
@@ -101,199 +101,182 @@ Deletes the user's account. A 204 status code is always returned.
 Returns a list of users. A 200 status code is always returned with the following response body:
 ```ts
 {
-  id: number, // positive integer
-  firstName: string, // 1-30 characters
-  lastName: string, // 1-30 characters
+  id: number; // unsigned integer
+  firstName: string; // 1-30 characters
+  lastName: string; // 1-30 characters
 }[]
 ```
 
 ### GET /avatar/:userId
 
-Returns the specified user's avatar. `userId` must be an positive integer. If the user does not have a profile picture or their account has been deleted, a 404 status code is returned with `code` set to `NO_SUCH_AVATAR`. `size` is required as a query parameter to specify the size to load the image in and must an integer be between `32` and `512`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP on android.
+Returns the specified user's avatar. `userId` must be an unsigned integer. If the user does not have a profile picture or their account has been deleted, a 404 status code is returned with `code` set to `NO_SUCH_AVATAR`. `size` is required as a query parameter to specify the size to load the image in and must an integer be between `32` and `512`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP on android.
 
-### GET /report/:id
+### Reports
 
-Returns a scouting report. `id` must be an positive integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
+#### Schemas
+
 ```ts
-{
+type ReportData = {
+  createdAt: string; // ISO 8601 date-time
+  eventCode: string; // 5 characters
+  matchType: "QUALIFICATION" | "PLAYOFF";
+  matchNumber: number; // integer 1-200
+  teamNumber: number; // integer 1-20000
+  notes: string; // <=400 characters
+  minorFouls: number; // unsigned integer
+  majorFouls: number; // unsigned integer
+  secondsIncapacitated: number; // unsigned integer
+  overBump: boolean;
+  underTrench: boolean;
+  startingPosition: "LEFT" | "CENTER" | "RIGHT";
+  auto: {
+    notes: string; // <=400 characters
+    hubScores: number; // unsigned integer
+    hubMisses: number; // unsigned integer
+    climb: "NONE" | "LEVEL1" | "FAILED";
+    collectDepot: boolean;
+    collectNeutral: boolean;
+    collectOutpost: boolean;
+    disruptNz: boolean;
+    passes: number; // unsigned integer
+  };
+  teleop: {
+    notes: string; // <=400 characters
+    hubScores: number; // unsigned integer
+    hubMisses: number; // unsigned integer
+    level: number; // unsigned integer <=3
+    climbFailed: boolean;
+  };
+  endgame: {
+    notes: string; // <=400 characters
+    level: number; // unsigned integer <=3
+    climbFailed: boolean;
+  };
+};
+```
+
+#### GET /report/:id
+
+Returns a scouting report. `id` must be an unsigned integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
+```ts
+ReportData & {
   user: {
-    id: number, // positive integer
-    firstName: string, // 1-30 characters
-    lastName: string, // 1-30 characters
-  } | null,
-  createdAt: string, // ISO 8601 date-time
-  eventCode: string, // 5 characters
-  matchType: "QUALIFICATION" | "PLAYOFF",
-  matchNumber: number, // integer 1-200
-  teamNumber: number, // integer 1-20000
-  notes: string, // <=400 characters
-  minorFouls: number, // positive integer
-  majorFouls: number, // positive integer
-  secondsIncapacitated: number, // positive integer
-  overBump: boolean,
-  underTrench: boolean,
-  startingPosition: "LEFT" | "CENTER" | "RIGHT",
-  auto: {
-    notes: string, // <=400 characters
-    hubScores: number, // positive integer
-    hubMisses: number, // positive integer
-    climb: "NONE" | "LEVEL1" | "FAILED",
-    collectDepot: boolean,
-    collectNeutral: boolean,
-    collectOutpost: boolean,
-    disruptNz: boolean,
-    passes: number, // positive integer
-  },
-  teleop: {
-    notes: string, // <=400 characters
-    hubScores: number, // positive integer
-    hubMisses: number, // positive integer
-    level: number, // positive integer <=3
-    climbFailed: boolean,
-  },
-  endgame: {
-    notes: string, // <=400 characters
-    level: number, // positive integer <=3
-    climbFailed: boolean,
-  },
+    id: number; // unsigned integer
+    firstName: string; // 1-30 characters
+    lastName: string; // 1-30 characters
+  } | null;
 }
 ```
 
-### POST /report
+#### POST /report
 
-Creates a scouting report. A 201 status code is always returned. The following request body schema is used:
-```ts
-{
-  createdAt: string, // ISO 8601 date-time
-  eventCode: string, // 5 characters
-  matchType: "QUALIFICATION" | "PLAYOFF",
-  matchNumber: number, // integer 1-200
-  teamNumber: number, // integer 1-20000
-  notes: string, // <=400 characters
-  minorFouls: number, // positive integer
-  majorFouls: number, // positive integer
-  secondsIncapacitated: number, // positive integer
-  overBump: boolean,
-  underTrench: boolean,
-  startingPosition: "LEFT" | "CENTER" | "RIGHT",
-  auto: {
-    notes: string, // <=400 characters
-    hubScores: number, // positive integer
-    hubMisses: number, // positive integer
-    climb: "NONE" | "LEVEL1" | "FAILED",
-    collectDepot: boolean,
-    collectNeutral: boolean,
-    collectOutpost: boolean,
-    disruptNz: boolean,
-    passes: number, // positive integer
-  },
-  teleop: {
-    notes: string, // <=400 characters
-    hubScores: number, // positive integer
-    hubMisses: number, // positive integer
-    level: number, // positive integer <=3
-    climbFailed: boolean,
-  },
-  endgame: {
-    notes: string, // <=400 characters
-    level: number, // positive integer <=3
-    climbFailed: boolean,
-  },
-}
-```
+Creates a scouting report. A 201 status code is always returned. `ReportData` is used for the request body schema.
 
-### GET /reports
+#### GET /reports
 
 Returns a list of reports. Query parameters can be used to filter the results. The following schema is used for query parameters:
 ```ts
 {
-  userId?: number, // positive integer
-  eventCode?: string, // 5 characters
-  matchType?: "QUALIFICATION" | "PLAYOFF",
-  minMatchNumber?: number, // integer 1-200
-  maxMatchNumber?: number, // integer 1-200
-  teamNumber?: number, // integer 1-20000
-  maxMinorFouls?: number, // positive integer
-  maxMajorFouls?: number, // positive integer
-  maxSecondsIncapacitated?: number, // positive integer
-  overBump?: boolean,
-  underTrench?: boolean,
-  startingPosition?: "LEFT" | "CENTER" | "RIGHT" | ("LEFT" | "CENTER" | "RIGHT")[],
+  userId?: number; // unsigned integer
+  eventCode?: string; // 5 characters
+  matchType?: "QUALIFICATION" | "PLAYOFF";
+  minMatchNumber?: number; // integer 1-200
+  maxMatchNumber?: number; // integer 1-200
+  teamNumber?: number; // integer 1-20000
+  maxMinorFouls?: number; // unsigned integer
+  maxMajorFouls?: number; // unsigned integer
+  maxSecondsIncapacitated?: number; // unsigned integer
+  overBump?: boolean;
+  underTrench?: boolean;
+  startingPosition?: "LEFT" | "CENTER" | "RIGHT" | ("LEFT" | "CENTER" | "RIGHT")[];
 
-  autoMinHubScores?: number, // integer >=1
-  autoMaxHubMisses?: number, // integer >=1
-  autoLevel1?: boolean,
-  autoCollectDepot?: boolean,
-  autoCollectNeutral?: boolean,
-  autoCollectOutpost?: boolean,
-  autoDidNotDisruptNz?: boolean,
-  autoMinPasses?: number, // integer >=1
+  autoMinHubScores?: number; // integer >=1
+  autoMaxHubMisses?: number; // integer >=1
+  autoLevel1?: boolean;
+  autoCollectDepot?: boolean;
+  autoCollectNeutral?: boolean;
+  autoCollectOutpost?: boolean;
+  autoDidNotDisruptNz?: boolean;
+  autoMinPasses?: number; // integer >=1
 
-  teleopMinHubScores?: number, // integer >=1
-  teleopMaxHubMisses?: number, // integer >=1
-  teleopMinLevel?: number, // integer 1-3
-  teleopClimbSucceeded?: boolean,
+  teleopMinHubScores?: number; // integer >=1
+  teleopMaxHubMisses?: number; // integer >=1
+  teleopMinLevel?: number; // integer 1-3
+  teleopClimbSucceeded?: boolean;
 
-  endgameMinLevel?: number, // integer 1-3
-  endgameClimbSucceeded?: boolean,
+  endgameMinLevel?: number; // integer 1-3
+  endgameClimbSucceeded?: boolean;
 
-  take: number, // positive integer - return N reports
-  skip: number, // positive integer - skip first N reports
+  take: number; // unsigned integer - return N reports
+  skip: number; // unsigned integer - skip first N reports
 }
 ```
 A 200 status code is always returned with the following response body:
 ```ts
 {
-  id: number, // positive integer
-  teamNumber: number, // integer 1-20000
+  id: number; // unsigned integer
+  teamNumber: number; // integer 1-20000
   user: {
-    id: number, // positive integer
-    firstName: string, // 1-50 characters
-    lastName: string, // 1-50 characters
-  } | null,
+    id: number; // unsigned integer
+    firstName: string; // 1-50 characters
+    lastName: string; // 1-50 characters
+  } | null;
 }[]
 ```
 
-### GET /rankings
+#### GET /reports/data
+
+Returns the data for every report so it can be downloaded before an event and used if offline. A 200 status code is always returned with `ReportData[]` for the schema.
+
+#### POST /reports/data
+
+Uploads reports en masse. This route is intended for use with the device used to collect QR codes. The following request body schema is used:
+```ts
+(ReportData & {
+  userId: number; // unsigned integer
+})[]
+```
+
+#### GET /rankings
 
 Returns team ranking data using the OpenAI API. Upon success, a 200 status code is returned with the following response body:
 ```ts
 {
-  teamNumber: number, // integer 1-20000
-  score: number, // 0-1 - aggregate score
-  confidence: number, // 0-1
-  overview: string, // Markdown
+  teamNumber: number; // integer 1-20000
+  score: number; // 0-1 - aggregate score
+  confidence: number; // 0-1
+  overview: string; // Markdown
   avg: {
-    minorFouls: number, // positive
-    majorFouls: number, // positive
-    secondsIncapacitated: number, // positive
-    overBump: number, // 0-1
-    underTrench: number, // 0-1
+    minorFouls: number; // unsigned
+    majorFouls: number; // unsigned
+    secondsIncapacitated: number; // unsigned
+    overBump: number; // 0-1
+    underTrench: number; // 0-1
     auto: {
-      hubScores: number, // positive
-      hubMisses: number, // positive
+      hubScores: number; // unsigned
+      hubMisses: number; // unsigned
       climb: {
-        none: number, // 0-1
-        level1: number, // 0-1
-        failed: number, // 0-1
-      },
-      collectDepot: number, // 0-1
-      collectNeutral: number, // 0-1
-      collectOutpost: number, // 0-1
-      disruptNz: number, // 0-1
-      passes: number, // positive
-    },
+        none: number; // 0-1
+        level1: number; // 0-1
+        failed: number; // 0-1
+      };
+      collectDepot: number; // 0-1
+      collectNeutral: number; // 0-1
+      collectOutpost: number; // 0-1
+      disruptNz: number; // 0-1
+      passes: number; // unsigned
+    };
     teleop: {
-      hubScores: number, // positive
-      hubMisses: number, // positive
-      level: number, // 0-1
-      climbFailed: number, // 0-1
-    },
+      hubScores: number; // unsigned
+      hubMisses: number; // unsigned
+      level: number; // 0-1
+      climbFailed: number; // 0-1
+    };
     endgame: {
-      level: number, // 0-1
-      climbFailed: number, // 0-1
-    },
-  },
+      level: number; // 0-1
+      climbFailed: number; // 0-1
+    };
+  };
 }[] // unsorted array
 ```
 I would personally recommend having a slider on the frontend that uses a formula like $score\times(n^2+(1-n^2)\times confidence)$ to rank teams with a default value around $0.7$.
@@ -303,8 +286,8 @@ I would personally recommend having a slider on the frontend that uses a formula
 All authentication routes start with **/auth**. The user's ID can be accessed by decoding the access token and accessing the `id` value. Upon success, all authentication routes return a 201 status code with the following response body, except for **/auth/logout**:
 ```ts
 {
-  accessToken: string, // JWT
-  refreshToken: string, // UUID V4
+  accessToken: string; // JWT
+  refreshToken: string; // UUID V4
 }
 ```
 
@@ -313,11 +296,11 @@ All authentication routes start with **/auth**. The user's ID can be accessed by
 Creates an account. If the team password is not "AlexaIsOurScoutingLead!", a 401 status code is returned with `code` set to `INCORRECT_TEAM_PASSWORD`. If the username is taken, a 409 status code is returned with `code` set to `USERNAME_TAKEN`. The following request body schema is used:
 ```ts
 {
-  username: string, // 1-30 characters
-  password: string, // 1-50 characters
-  firstName: string, // 1-50 characters
-  lastName: string, // <=50 characters
-  teamPassword: string, // >=1 character
+  username: string; // 1-30 characters
+  password: string; // 1-50 characters
+  firstName: string; // 1-50 characters
+  lastName: string; // <=50 characters
+  teamPassword: string; // >=1 character
 }
 ```
 
@@ -326,8 +309,8 @@ Creates an account. If the team password is not "AlexaIsOurScoutingLead!", a 401
 Logs the user in. If the user does not exist, a 401 status code is returned with `code` set to `NO_SUCH_USER`. If the password is incorrect, a 401 status code is returned with `code` set to `INCORRECT_PASSWORD`. The following request body schema is used:
 ```ts
 {
-  username: string, // 1-30 characters
-  password: string, // 1-50 characters
+  username: string; // 1-30 characters
+  password: string; // 1-50 characters
 }
 ```
 

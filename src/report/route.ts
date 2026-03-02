@@ -2,14 +2,17 @@ import z from "zod";
 import type App from "@/app";
 import db from "@/db";
 import { CoercedInt, Response4xx } from "@/schemas";
+import * as user from "@/user/schemas";
 import * as report from "./schemas";
 
 const GetSchema = {
   params: z.object({
-    id: CoercedInt.positive(),
+    id: CoercedInt.nonnegative(),
   }),
   response: {
-    200: report.Report,
+    200: report.Data.extend({
+      user: z.union([user.Display, z.null()]),
+    }),
     "4xx": Response4xx,
   },
 };

@@ -9,7 +9,7 @@ export const MAX_AVATAR_SIZE = 512;
 
 const GetSchema = {
   params: z.object({
-    userId: CoercedInt.positive(),
+    userId: CoercedInt.nonnegative(),
   }),
   querystring: z.object({
     size: CoercedInt.min(32).max(MAX_AVATAR_SIZE),

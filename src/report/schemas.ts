@@ -2,18 +2,17 @@ import z from "zod";
 import { AutoClimb, MatchType, StartingPosition } from "@/db/prisma/enums";
 import type { ReportCreateInput } from "@/db/prisma/models";
 import { CoercedInt } from "@/schemas";
-import * as user from "@/user/schemas";
 
 export const EventCode = z.string().length(5);
 export const MatchNumber = z.int().min(1).max(200);
 export const CoercedMatchNumber = CoercedInt.min(1).max(200);
 export const TeamNumber = z.int().min(1).max(20000);
 export const CoercedTeamNumber = CoercedInt.min(1).max(20000);
-export const Notes = z.string().max(400);
+const Notes = z.string().max(400);
 
-export const Endgame = z.object({
+const Endgame = z.object({
   notes: Notes,
-  level: z.int().positive().max(3),
+  level: z.int().nonnegative().max(3),
   climbFailed: z.boolean(),
 });
 
@@ -24,26 +23,26 @@ export const Data = z.object({
   matchNumber: MatchNumber,
   teamNumber: TeamNumber,
   notes: Notes,
-  minorFouls: z.int().positive(),
-  majorFouls: z.int().positive(),
-  secondsIncapacitated: z.int().positive(),
+  minorFouls: z.int().nonnegative(),
+  majorFouls: z.int().nonnegative(),
+  secondsIncapacitated: z.int().nonnegative(),
   overBump: z.boolean(),
   underTrench: z.boolean(),
   startingPosition: z.enum(StartingPosition),
   auto: z.object({
     notes: Notes,
-    hubScores: z.int().positive(),
-    hubMisses: z.int().positive(),
+    hubScores: z.int().nonnegative(),
+    hubMisses: z.int().nonnegative(),
     climb: z.enum(AutoClimb),
     collectDepot: z.boolean(),
     collectNeutral: z.boolean(),
     collectOutpost: z.boolean(),
     disruptNz: z.boolean(),
-    passes: z.int().positive(),
+    passes: z.int().nonnegative(),
   }),
   teleop: Endgame.extend({
-    hubScores: z.int().positive(),
-    hubMisses: z.int().positive(),
+    hubScores: z.int().nonnegative(),
+    hubMisses: z.int().nonnegative(),
   }),
   endgame: Endgame,
 });
@@ -87,7 +86,3 @@ export function dataToDb(data: Data, userId: number): ReportCreateInput {
     endgameClimbFailed: data.endgame.climbFailed,
   };
 }
-
-export const Report = Data.extend({
-  user: z.union([user.Display, z.null()]),
-});

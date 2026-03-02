@@ -10,7 +10,7 @@ const GetSchema = {
 };
 
 const PostSchema = {
-  body: z.array(report.Data.extend({ userId: z.int().positive() })),
+  body: z.array(report.Data.extend({ userId: z.int().nonnegative() })),
   response: {
     201: z.null(),
   },

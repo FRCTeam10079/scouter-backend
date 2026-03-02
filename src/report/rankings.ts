@@ -31,14 +31,14 @@ The score represents a normalized estimate of expected match impact relative to 
 const AiRanking = z.object({
   score: z
     .number()
-    .positive()
+    .nonnegative()
     .max(1)
     .describe(
       "Normalized team value score in the range 0-1 representing expected match impact relative to other teams in the provided dataset.",
     ),
   confidence: z
     .number()
-    .positive()
+    .nonnegative()
     .max(1)
     .describe(
       "Normalized reliability value in the range 0-1 reflecting the stability, consistency, and data support behind the score.",
@@ -46,7 +46,7 @@ const AiRanking = z.object({
   overview: z
     .string()
     .describe(
-      "Concise human-readable summary explaining the evaluation, including key strengths, weaknesses, reliability factors, and notable performance patterns.",
+      "Markdown-formatted summary explaining the evaluation. Should include a brief paragraph overview followed by bullet points describing key strengths, weaknesses, reliability factors, and notable performance patterns. Use standard Markdown syntax only.",
     ),
 });
 
@@ -62,36 +62,36 @@ const AiRankings = z
   );
 
 const EndgameAvg = z.object({
-  level: z.number().positive().max(3),
-  climbFailed: z.number().positive().max(1),
+  level: z.number().nonnegative().max(3),
+  climbFailed: z.number().nonnegative().max(1),
 });
 
 const Rankings = z.record(
   report.TeamNumber,
   AiRanking.extend({
     avg: z.object({
-      minorFouls: z.number().positive(),
-      majorFouls: z.number().positive(),
-      secondsIncapacitated: z.number().positive(),
-      overBump: z.number().positive().max(1),
-      underTrench: z.number().positive().max(1),
+      minorFouls: z.number().nonnegative(),
+      majorFouls: z.number().nonnegative(),
+      secondsIncapacitated: z.number().nonnegative(),
+      overBump: z.number().nonnegative().max(1),
+      underTrench: z.number().nonnegative().max(1),
       auto: z.object({
-        hubScores: z.number().positive(),
-        hubMisses: z.number().positive(),
+        hubScores: z.number().nonnegative(),
+        hubMisses: z.number().nonnegative(),
         climb: z.object({
-          none: z.number().positive().max(1),
-          level1: z.number().positive().max(1),
-          failed: z.number().positive().max(1),
+          none: z.number().nonnegative().max(1),
+          level1: z.number().nonnegative().max(1),
+          failed: z.number().nonnegative().max(1),
         }),
-        collectDepot: z.number().positive().max(1),
-        collectNeutral: z.number().positive().max(1),
-        collectOutpost: z.number().positive().max(1),
-        disruptNz: z.number().positive().max(1),
-        passes: z.number().positive(),
+        collectDepot: z.number().nonnegative().max(1),
+        collectNeutral: z.number().nonnegative().max(1),
+        collectOutpost: z.number().nonnegative().max(1),
+        disruptNz: z.number().nonnegative().max(1),
+        passes: z.number().nonnegative(),
       }),
       teleop: EndgameAvg.extend({
-        hubScores: z.number().positive(),
-        hubMisses: z.number().positive(),
+        hubScores: z.number().nonnegative(),
+        hubMisses: z.number().nonnegative(),
       }),
       endgame: EndgameAvg,
     }),
@@ -117,8 +117,6 @@ let cache: Cache | null = null;
 
 export default async function route(app: App) {
   app.get("/rankings", { schema: GetSchema }, async (_, reply) => {
-    // I know `newestReport` and `reports` aren't synced but this is close
-    // enough and will save $$$ because scouting has a very low budget :(
     const newestReport = await db.report.findFirst({
       select: { id: true },
       orderBy: { id: "desc" },
@@ -126,10 +124,12 @@ export default async function route(app: App) {
     if (!newestReport) {
       return [];
     }
+    // Check if a report has been created since the rankings were last updated.
     if (cache?.reportId === newestReport.id) {
       return cache.rankings;
     }
     const reports = await db.report.findMany({
+      where: { id: { lte: newestReport.id } },
       select: {
         createdAt: true,
         teamNumber: true,
@@ -167,7 +167,7 @@ export default async function route(app: App) {
     const response = await openai.responses.parse({
       model: "gpt-5.2-pro",
       reasoning: { effort: "xhigh" },
-      temperature: 0.1,
+      temperature: 0,
       input: [
         { role: "system", content: PROMPT },
         { role: "user", content: JSON.stringify(aiReports) },
@@ -264,7 +264,7 @@ export default async function route(app: App) {
 
       ranking.reports++;
     }
-    // Divide for the average.
+    // Divide to get the average.
     for (const ranking of Object.values(rankings)) {
       ranking.avg.minorFouls /= ranking.reports;
       ranking.avg.majorFouls /= ranking.reports;

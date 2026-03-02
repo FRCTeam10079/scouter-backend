@@ -8,15 +8,15 @@ import * as report from "./schemas";
 
 const GetSchema = {
   querystring: z.object({
-    userId: CoercedInt.positive().optional(),
+    userId: CoercedInt.nonnegative().optional(),
     eventCode: report.EventCode.optional(),
     matchType: z.enum(MatchType).optional(),
     minMatchNumber: report.CoercedMatchNumber.optional(),
     maxMatchNumber: report.CoercedMatchNumber.optional(),
     teamNumber: report.CoercedTeamNumber.optional(),
-    maxMinorFouls: CoercedInt.positive().optional(),
-    maxMajorFouls: CoercedInt.positive().optional(),
-    maxSecondsIncapacitated: CoercedInt.positive().optional(),
+    maxMinorFouls: CoercedInt.nonnegative().optional(),
+    maxMajorFouls: CoercedInt.nonnegative().optional(),
+    maxSecondsIncapacitated: CoercedInt.nonnegative().optional(),
     overBump: z.boolean().optional(),
     underTrench: z.boolean().optional(),
     startingPosition: z
@@ -24,7 +24,7 @@ const GetSchema = {
       .optional(),
 
     autoMinHubScores: CoercedInt.min(1).optional(),
-    autoMaxHubMisses: CoercedInt.positive().optional(),
+    autoMaxHubMisses: CoercedInt.nonnegative().optional(),
     autoLevel1: z.boolean().optional(),
     autoCollectDepot: z.boolean().optional(),
     autoCollectNeutral: z.boolean().optional(),
@@ -33,20 +33,20 @@ const GetSchema = {
     autoMinPasses: CoercedInt.min(1).optional(),
 
     teleopMinHubScores: CoercedInt.min(1).optional(),
-    teleopMaxHubMisses: CoercedInt.positive().optional(),
+    teleopMaxHubMisses: CoercedInt.nonnegative().optional(),
     teleopMinLevel: CoercedInt.min(1).optional(),
     teleopClimbSucceeded: z.boolean().optional(),
 
     endgameMinLevel: CoercedInt.min(1).optional(),
     endgameClimbSucceeded: z.boolean().optional(),
 
-    take: CoercedInt.positive(),
-    skip: CoercedInt.positive(),
+    take: CoercedInt.nonnegative(),
+    skip: CoercedInt.nonnegative(),
   }),
   response: {
     200: z.array(
       z.object({
-        id: z.int().positive(),
+        id: z.int().nonnegative(),
         teamNumber: report.TeamNumber,
         user: z.union([user.Display, z.null()]),
       }),
