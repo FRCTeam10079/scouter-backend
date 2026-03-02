@@ -280,6 +280,7 @@ export default async function route(app: App) {
       ranking.avg.auto.collectDepot /= ranking.reports;
       ranking.avg.auto.collectNeutral /= ranking.reports;
       ranking.avg.auto.collectOutpost /= ranking.reports;
+      ranking.avg.auto.disruptNz /= ranking.reports;
       ranking.avg.auto.passes /= ranking.reports;
 
       ranking.avg.teleop.hubScores /= ranking.reports;
