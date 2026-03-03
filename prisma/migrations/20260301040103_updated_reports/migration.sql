@@ -20,7 +20,9 @@
   - Added the required column `secondsIncapacitated` to the `Report` table without a default value. This is not possible if the table is not empty.
   - Added the required column `startingPosition` to the `Report` table without a default value. This is not possible if the table is not empty.
   - Added the required column `teleopClimbFailed` to the `Report` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `teleopDefended` to the `Report` table without a default value. This is not possible if the table is not empty.
   - Added the required column `teleopHubScores` to the `Report` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `teleopPasses` to the `Report` table without a default value. This is not possible if the table is not empty.
   - Added the required column `underTrench` to the `Report` table without a default value. This is not possible if the table is not empty.
   - Added the required column `teleopLevel` to the `Report` table without a default value. This is not possible if the table is not empty.
 
@@ -50,7 +52,9 @@ ADD COLUMN     "overBump" BOOLEAN NOT NULL,
 ADD COLUMN     "secondsIncapacitated" SMALLINT NOT NULL,
 ADD COLUMN     "startingPosition" "StartingPosition" NOT NULL,
 ADD COLUMN     "teleopClimbFailed" BOOLEAN NOT NULL,
+ADD COLUMN     "teleopDefended" BOOLEAN NOT NULL,
 ADD COLUMN     "teleopHubScores" SMALLINT NOT NULL,
+ADD COLUMN     "teleopPasses" SMALLINT NOT NULL,
 ADD COLUMN     "underTrench" BOOLEAN NOT NULL,
 DROP COLUMN "endgameLevel",
 ADD COLUMN     "endgameLevel" SMALLINT NOT NULL DEFAULT 0,

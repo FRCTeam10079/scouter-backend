@@ -22,11 +22,11 @@ export const reportTypes = Prisma.defineExtension({
           autoHubScores: true,
           autoHubMisses: true,
           autoClimb: true,
+          autoPasses: true,
           autoCollectDepot: true,
           autoCollectNeutral: true,
           autoCollectOutpost: true,
           autoDisruptNz: true,
-          autoPasses: true,
         },
         compute(report) {
           return {
@@ -34,11 +34,11 @@ export const reportTypes = Prisma.defineExtension({
             hubScores: report.autoHubScores,
             hubMisses: report.autoHubMisses,
             climb: report.autoClimb,
+            passes: report.autoPasses,
             collectDepot: report.autoCollectDepot,
             collectNeutral: report.autoCollectNeutral,
             collectOutpost: report.autoCollectOutpost,
             disruptNz: report.autoDisruptNz,
-            passes: report.autoPasses,
           };
         },
       },
@@ -49,6 +49,8 @@ export const reportTypes = Prisma.defineExtension({
           teleopHubMisses: true,
           teleopLevel: true,
           teleopClimbFailed: true,
+          teleopDefended: true,
+          teleopPasses: true,
         },
         compute(report) {
           return {
@@ -57,6 +59,8 @@ export const reportTypes = Prisma.defineExtension({
             hubMisses: report.teleopHubMisses,
             level: report.teleopLevel,
             climbFailed: report.teleopClimbFailed,
+            defended: report.teleopDefended,
+            passes: report.teleopPasses,
           };
         },
       },

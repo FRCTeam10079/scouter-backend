@@ -136,11 +136,11 @@ type ReportData = {
     hubScores: number; // unsigned integer
     hubMisses: number; // unsigned integer
     climb: "NONE" | "LEVEL1" | "FAILED";
+    passes: number; // unsigned integer
     collectDepot: boolean;
     collectNeutral: boolean;
     collectOutpost: boolean;
     disruptNz: boolean;
-    passes: number; // unsigned integer
   };
   teleop: {
     notes: string; // <=400 characters
@@ -148,6 +148,8 @@ type ReportData = {
     hubMisses: number; // unsigned integer
     level: number; // unsigned integer <=3 - zero means the robot did not climb
     climbFailed: boolean;
+    defended: boolean;
+    passes: number; // unsigned integer
   };
   endgame: {
     notes: string; // <=400 characters
@@ -195,16 +197,18 @@ type Schema = {
   autoMinHubScores?: number; // integer >=1
   autoMaxHubMisses?: number; // integer >=1
   autoLevel1?: boolean;
+  autoMinPasses?: number; // integer >=1
   autoCollectDepot?: boolean;
   autoCollectNeutral?: boolean;
   autoCollectOutpost?: boolean;
   autoDidNotDisruptNz?: boolean;
-  autoMinPasses?: number; // integer >=1
 
   teleopMinHubScores?: number; // integer >=1
   teleopMaxHubMisses?: number; // integer >=1
   teleopMinLevel?: number; // integer 1-3
   teleopClimbSucceeded?: boolean;
+  teleopDefended?: boolean;
+  teleopMinPasses?: number; // integer >=1
 
   endgameMinLevel?: number; // integer 1-3
   endgameClimbSucceeded?: boolean;
@@ -246,38 +250,40 @@ Returns team ranking data using the OpenAI API. Upon success, a 200 status code 
 type Schema = Record<
   number,
   {
-    score: number; // 0-1 - aggregate score
-    confidence: number; // 0-1
+    score: number; // unsigned <=1 - aggregate score
+    confidence: number; // unsigned <=1
     overview: string; // Markdown
     avg: {
       minorFouls: number; // unsigned
       majorFouls: number; // unsigned
       secondsIncapacitated: number; // unsigned
-      overBump: number; // 0-1
-      underTrench: number; // 0-1
+      overBump: number; // unsigned <=1
+      underTrench: number; // unsigned <=1
       auto: {
         hubScores: number; // unsigned
         hubMisses: number; // unsigned
         climb: {
-          none: number; // 0-1
-          level1: number; // 0-1
-          failed: number; // 0-1
+          none: number; // unsigned <=1
+          level1: number; // unsigned <=1
+          failed: number; // unsigned <=1
         };
-        collectDepot: number; // 0-1
-        collectNeutral: number; // 0-1
-        collectOutpost: number; // 0-1
-        disruptNz: number; // 0-1
         passes: number; // unsigned
+        collectDepot: number; // unsigned <=1
+        collectNeutral: number; // unsigned <=1
+        collectOutpost: number; // unsigned <=1
+        disruptNz: number; // unsigned <=1
       };
       teleop: {
         hubScores: number; // unsigned
         hubMisses: number; // unsigned
-        level: number; // 0-1
-        climbFailed: number; // 0-1
+        level: number; // unsigned <=1
+        climbFailed: number; // unsigned <=1
+        defended: number; // unsigned <=1
+        passes: number; // unsigned
       };
       endgame: {
-        level: number; // 0-1
-        climbFailed: number; // 0-1
+        level: number; // unsigned <=1
+        climbFailed: number; // unsigned <=1
       };
     };
   }

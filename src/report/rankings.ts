@@ -7,25 +7,27 @@ import { AutoClimb } from "@/db/prisma/enums";
 import * as report from "./schemas";
 
 const PROMPT = `\
-You are an AI scouting analyst for a FIRST Robotics Competition team. You will be given scouting data as a JSON array, where each element represents a single team's performance record from a match. Each object contains structured performance data and qualitative notes. Your task is to evaluate teams for alliance selection and match strategy using only the information contained in this JSON array. You must assess both expected team value and the reliability of that assessment based strictly on the provided data.
+You are an AI scouting analyst for a FIRST Robotics Competition team. You will be given scouting data as a JSON array, where each element represents a single team's performance record from a match. Multiple teams may share the same 'matchNumber', indicating they played in the same match. Your task is to evaluate teams for alliance selection and match strategy using only the information contained in this JSON array. You must assess both expected team value and the reliability of that assessment based strictly on the provided data while minimizing bias caused by random alliance compositions.
 
 All numeric evaluations must be normalized to a 0-1 scale, where higher values indicate stronger performance or greater reliability. These normalized values are intended to be displayed as percentages in the user interface but must be treated internally as normalized values. Expected team value and reliability must remain conceptually separate and must not be conflated.
 
 Alliances score by delivering game pieces into their alliance HUB during Autonomous and Teleoperated periods and by climbing the TOWER during Endgame. Autonomous actions are high impact because they occur without driver input and influence early match momentum. Teleoperated play accounts for the majority of scoring volume. Endgame climbs are among the highest-value actions in the game and frequently determine match outcomes. Fouls award points to the opposing alliance and can significantly swing close matches.
 
-All evaluations must be based strictly on the fields present in the input JSON array. Capabilities or behaviors must not be inferred if they are not supported by the data. The 'createdAt' value is an ISO 8601 date-time and may be used to detect general trends across time, but performance should generally be treated as stable unless clear regression or sustained improvement is observed.
+The input data is a JSON array. Each object includes fields such as 'createdAt', 'matchNumber', 'teamNumber', 'notes', 'minorFouls', 'majorFouls', 'secondsIncapacitated', 'auto', 'teleop', and 'endgame'. All evaluations must be based strictly on the fields present in the input JSON array. Capabilities or behaviors must not be inferred if they are not supported by the data. The 'createdAt' value is an ISO 8601 date-time and may be used to detect broad temporal trends, but performance should generally be treated as stable unless sustained directional change is clearly supported by data.
+
+To reduce bias from random alliances, you must consider match context using 'matchNumber'. When evaluating a team's scoring output, analyze other teams that share the same 'matchNumber' to detect contextual effects. If a team's scoring appears elevated due to high passing volume from alliance partners or other facilitation, avoid attributing the full scoring output to independent capability unless supported by consistent performance across multiple matches. If scoring output is reduced in matches where 'teleop.defended' is true, interpret that as defensive pressure rather than lack of intrinsic ability, especially if performance is stronger in other matches. Adjust confidence before heavily adjusting expected team value when contextual influence is uncertain.
 
 Reliability is a primary factor in evaluation. The 'secondsIncapacitated' value represents total time a robot was unable to function due to mechanical or operational problems and should strongly reduce reliability and moderately reduce expected team value when high. Frequent 'majorFouls' significantly reduce reliability and indicate playoff risk. Repeated 'minorFouls' reduce reliability and may indicate driver or field awareness issues.
 
-Autonomous performance must be evaluated using 'auto.hubScores', 'auto.hubMisses', 'auto.climb', 'auto.disruptNz', and 'auto.passes'. Consistent autonomous scoring increases expected team value. High miss counts reduce reliability. Successful autonomous climbs increase value. 'auto.disruptNz' may indicate defensive or strategic influence and should contribute modestly to expected value when consistent. 'auto.passes' indicate cooperative play and role specialization and should increase value when they support scoring alliances. 'auto.notes' should be used to interpret context not reflected in numeric data.
+Autonomous performance must be evaluated using 'auto.hubScores', 'auto.hubMisses', 'auto.climb', 'auto.disruptNz', and 'auto.passes'. Consistent autonomous scoring increases expected team value. High miss counts reduce reliability. Successful autonomous climbs increase value. 'auto.disruptNz' may indicate defensive or strategic influence and should contribute modestly to expected value when consistent. 'auto.passes' indicate cooperative play and role specialization and should increase expected value when they contribute meaningfully to alliance scoring. 'auto.notes' should be used to interpret context not reflected in numeric data.
 
-Teleoperated performance must be evaluated using 'teleop.hubScores', 'teleop.hubMisses', 'teleop.level', and 'teleop.climbFailed'. Sustained scoring throughput increases expected team value. Efficiency should be considered, with excessive misses reducing reliability. A non-null 'teleop.level' indicates a successful climb attempt during Teleoperated play and should increase expected value. A true 'teleop.climbFailed' significantly reduces reliability.
+Teleoperated performance must be evaluated using 'teleop.hubScores', 'teleop.hubMisses', 'teleop.level', 'teleop.climbFailed', 'teleop.defended', and 'teleop.passes'. Sustained scoring throughput increases expected team value. Efficiency should be considered, with excessive misses reducing reliability. A non-null 'teleop.level' indicates a successful climb attempt during Teleoperated play and should increase expected value. A true 'teleop.climbFailed' significantly reduces reliability. If 'teleop.defended' is true and scoring output is reduced, treat this as defensive pressure rather than reduced intrinsic capability. 'teleop.passes' indicate facilitation and role flexibility and should increase expected team value when they meaningfully support alliance scoring, even if direct hub scoring is lower.
 
-Endgame performance must be evaluated using 'endgame.level' and 'endgame.climbFailed'. Endgame climb level is a high-impact factor and should heavily influence expected team value. Consistent successful climbs increase both value and reliability. A true 'endgame.climbFailed' significantly reduces reliability. 'endgame.notes' should be used to interpret situational factors such as partial climbs or strategic decisions.
+Endgame performance must be evaluated using 'endgame.level' and 'endgame.climbFailed'. Endgame climb level is a high-impact factor and should heavily influence expected team value. Consistent successful climbs increase both value and reliability. A true 'endgame.climbFailed' significantly reduces reliability. 'endgame.notes' should be used to interpret situational factors such as strategic decisions or partial climb attempts.
 
-The 'notes', 'auto.notes', 'teleop.notes', and 'endgame.notes' values should be used to adjust evaluation when structured data alone does not fully explain performance. Qualitative information may indicate defensive capability, mechanical stability, strategic awareness, or execution quality.
+The score represents a normalized estimate of expected independent match impact relative to other teams based solely on the provided data while accounting for contextual influences from shared 'matchNumber' performance. Confidence represents a normalized measure of how reliable that estimate is. Confidence must reflect mechanical reliability, scoring consistency across matches, efficiency stability, foul discipline, and robustness across different alliance contexts. Confidence should increase when performance remains stable across varying 'matchNumber' groupings and alliance compositions. Confidence should decrease when performance varies significantly depending on alliance partners, passing volume, or defensive conditions, unless that role-based dependency is consistent and predictable. Facilitation roles indicated by sustained 'teleop.passes' or 'auto.passes' are not inherently low-confidence if they are consistent across matches. Confidence must not be incorporated into the score itself.
 
-The score represents a normalized estimate of expected match impact relative to other teams based solely on the provided data. Confidence represents a normalized measure of how reliable that estimate is, based on uptime, consistency across matches, scoring efficiency, penalty discipline, and agreement between quantitative metrics and qualitative notes. Confidence must not be incorporated into the score itself. Favor consistency and repeatability over single-match peak performance. Penalize volatility, frequent breakdowns, repeated penalties, and unreliable climbs. When data is limited or contradictory, reason conservatively and reflect lower confidence. All evaluations must be derived strictly from the provided JSON data, and missing information must not be invented.\
+Favor consistent, repeatable performance across varying match conditions over isolated peak matches. Penalize volatility, frequent breakdowns, repeated penalties, and unreliable climbs. When data is limited or heavily context-dependent, reduce confidence rather than aggressively altering expected team value. All evaluations must be derived strictly from the provided JSON data, and missing information must not be invented.\
 `;
 
 const AiRanking = z.object({
@@ -41,7 +43,7 @@ const AiRanking = z.object({
     .nonnegative()
     .max(1)
     .describe(
-      "Normalized reliability value in the range 0-1 reflecting the stability, consistency, and data support behind the score.",
+      "A normalized 0-1 measure of how reliable and stable the team's score estimate is. Higher values indicate consistent performance and robustness across matches and alliance contexts; lower values indicate volatility, breakdown risk, or context-dependent performance.",
     ),
   overview: z
     .string()
@@ -132,6 +134,7 @@ export default async function route(app: App) {
       where: { id: { lte: newestReport.id } },
       select: {
         createdAt: true,
+        matchNumber: true,
         teamNumber: true,
         notes: true,
         minorFouls: true,
@@ -148,6 +151,7 @@ export default async function route(app: App) {
     // Remove data the AI does not need to rank teams.
     const aiReports = reports.map((report) => ({
       createdAt: report.createdAt,
+      matchNumber: report.matchNumber,
       teamNumber: report.teamNumber,
       notes: report.notes,
       minorFouls: report.minorFouls,
@@ -198,17 +202,19 @@ export default async function route(app: App) {
                 level1: 0,
                 failed: 0,
               },
+              passes: 0,
               collectDepot: 0,
               collectNeutral: 0,
               collectOutpost: 0,
               disruptNz: 0,
-              passes: 0,
             },
             teleop: {
               hubScores: 0,
               hubMisses: 0,
               level: 0,
               climbFailed: 0,
+              defended: 0,
+              passes: 0,
             },
             endgame: {
               level: 0,
@@ -243,6 +249,7 @@ export default async function route(app: App) {
         case AutoClimb.FAILED:
           ranking.avg.auto.climb.failed++;
       }
+      ranking.avg.auto.passes += report.auto.passes;
       ranking.avg.auto.collectDepot += report.auto
         .collectDepot as unknown as number;
       ranking.avg.auto.collectNeutral += report.auto
@@ -250,13 +257,15 @@ export default async function route(app: App) {
       ranking.avg.auto.collectOutpost += report.auto
         .collectOutpost as unknown as number;
       ranking.avg.auto.disruptNz += report.auto.disruptNz as unknown as number;
-      ranking.avg.auto.passes += report.auto.passes;
 
       ranking.avg.teleop.hubScores += report.teleop.hubScores;
       ranking.avg.teleop.hubMisses += report.teleop.hubMisses;
       ranking.avg.teleop.level += report.teleop.level;
       ranking.avg.teleop.climbFailed += report.teleop
         .climbFailed as unknown as number;
+      ranking.avg.teleop.defended += report.teleop
+        .defended as unknown as number;
+      ranking.avg.teleop.passes += report.teleop.passes;
 
       ranking.avg.endgame.level += report.endgame.level;
       ranking.avg.endgame.climbFailed += report.endgame
@@ -277,16 +286,18 @@ export default async function route(app: App) {
       ranking.avg.auto.climb.none /= ranking.reports;
       ranking.avg.auto.climb.level1 /= ranking.reports;
       ranking.avg.auto.climb.failed /= ranking.reports;
+      ranking.avg.auto.passes /= ranking.reports;
       ranking.avg.auto.collectDepot /= ranking.reports;
       ranking.avg.auto.collectNeutral /= ranking.reports;
       ranking.avg.auto.collectOutpost /= ranking.reports;
       ranking.avg.auto.disruptNz /= ranking.reports;
-      ranking.avg.auto.passes /= ranking.reports;
 
       ranking.avg.teleop.hubScores /= ranking.reports;
       ranking.avg.teleop.hubMisses /= ranking.reports;
       ranking.avg.teleop.level /= ranking.reports;
       ranking.avg.teleop.climbFailed /= ranking.reports;
+      ranking.avg.teleop.defended /= ranking.reports;
+      ranking.avg.teleop.passes /= ranking.reports;
 
       ranking.avg.endgame.level /= ranking.reports;
       ranking.avg.endgame.climbFailed /= ranking.reports;

@@ -45,17 +45,19 @@ model Report {
   autoHubScores      Int       @db.SmallInt
   autoHubMisses      Int       @db.SmallInt
   autoClimb          AutoClimb
+  autoPasses         Int       @db.SmallInt
   autoCollectDepot   Boolean
   autoCollectNeutral Boolean
   autoCollectOutpost Boolean
   autoDisruptNz      Boolean
-  autoPasses         Int       @db.SmallInt
 
   teleopNotes       String  @db.VarChar(400)
   teleopHubScores   Int     @db.SmallInt
   teleopHubMisses   Int     @db.SmallInt
   teleopLevel       Int     @db.SmallInt
   teleopClimbFailed Boolean
+  teleopPasses      Int     @db.SmallInt
+  teleopDefended    Boolean
 
   endgameNotes       String  @db.VarChar(400)
   endgameLevel       Int     @default(0) @db.SmallInt

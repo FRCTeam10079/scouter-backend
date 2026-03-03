@@ -26,16 +26,18 @@ const GetSchema = {
     autoMinHubScores: CoercedInt.min(1).optional(),
     autoMaxHubMisses: CoercedInt.nonnegative().optional(),
     autoLevel1: z.boolean().optional(),
+    autoMinPasses: CoercedInt.min(1).optional(),
     autoCollectDepot: z.boolean().optional(),
     autoCollectNeutral: z.boolean().optional(),
     autoCollectOutpost: z.boolean().optional(),
     autoDidNotDisruptNz: z.boolean().optional(),
-    autoMinPasses: CoercedInt.min(1).optional(),
 
     teleopMinHubScores: CoercedInt.min(1).optional(),
     teleopMaxHubMisses: CoercedInt.nonnegative().optional(),
     teleopMinLevel: CoercedInt.min(1).optional(),
     teleopClimbSucceeded: z.boolean().optional(),
+    teleopDefended: z.boolean().optional(),
+    teleopMinPasses: CoercedInt.min(1).optional(),
 
     endgameMinLevel: CoercedInt.min(1).optional(),
     endgameClimbSucceeded: z.boolean().optional(),
@@ -99,6 +101,8 @@ export default async function route(app: App) {
           req.query.teleopClimbSucceeded !== undefined
             ? !req.query.teleopClimbSucceeded
             : undefined,
+        teleopDefended: req.query.teleopDefended,
+        teleopPasses: { gte: req.query.teleopMinPasses },
 
         endgameLevel: { gte: req.query.endgameMinLevel },
         endgameClimbFailed:
