@@ -1,12 +1,12 @@
 import cron from "node-cron";
 import { createApp, Logger } from "./app";
-import prisma from "./db";
+import db from "./db";
 
 const EVERY_TUESDAY_AT_2AM = "0 2 * * TUE";
 
 if (process.env.NODE_ENV === "production") {
   cron.schedule(EVERY_TUESDAY_AT_2AM, async () => {
-    await prisma.refreshToken.deleteMany({
+    await db.refreshToken.deleteMany({
       where: { expiresAt: { lt: new Date() } },
     });
   });

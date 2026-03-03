@@ -3,7 +3,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import { AutoClimb } from "@/db/prisma/enums";
+import { AutoClimb, StartingPosition } from "@/db/prisma/enums";
 import * as report from "./schemas";
 
 const PROMPT = `\
@@ -194,6 +194,11 @@ export default async function route(app: App) {
             secondsIncapacitated: 0,
             overBump: 0,
             underTrench: 0,
+            startingPosition: {
+              left: 0,
+              center: 0,
+              right: 0,
+            },
             auto: {
               hubScores: 0,
               hubMisses: 0,
@@ -236,6 +241,16 @@ export default async function route(app: App) {
       ranking.avg.secondsIncapacitated += report.secondsIncapacitated;
       ranking.avg.overBump += report.overBump as unknown as number;
       ranking.avg.underTrench += report.underTrench as unknown as number;
+      switch (report.startingPosition) {
+        case StartingPosition.LEFT:
+          ranking.avg.startingPosition.left++;
+          break;
+        case StartingPosition.CENTER:
+          ranking.avg.startingPosition.center++;
+          break;
+        case StartingPosition.RIGHT:
+          ranking.avg.startingPosition.right++;
+      }
 
       ranking.avg.auto.hubScores += report.auto.hubScores;
       ranking.avg.auto.hubMisses += report.auto.hubMisses;
@@ -280,6 +295,9 @@ export default async function route(app: App) {
       ranking.avg.secondsIncapacitated /= ranking.reports;
       ranking.avg.overBump /= ranking.reports;
       ranking.avg.underTrench /= ranking.reports;
+      ranking.avg.startingPosition.left /= ranking.reports;
+      ranking.avg.startingPosition.center /= ranking.reports;
+      ranking.avg.startingPosition.right /= ranking.reports;
 
       ranking.avg.auto.hubScores /= ranking.reports;
       ranking.avg.auto.hubMisses /= ranking.reports;
