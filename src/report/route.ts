@@ -7,7 +7,7 @@ import * as report from "./schemas";
 
 const GetSchema = {
   params: z.object({
-    id: CoercedInt.positive(),
+    id: CoercedInt.nonnegative(),
   }),
   response: {
     200: report.Data.extend({
@@ -38,6 +38,10 @@ export default async function route(app: App) {
         notes: true,
         minorFouls: true,
         majorFouls: true,
+        secondsIncapacitated: true,
+        overBump: true,
+        underTrench: true,
+        startingPosition: true,
         auto: true,
         teleop: true,
         endgame: true,

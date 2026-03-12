@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
+import * as testUser from "test/user";
 import { createApp, Logger } from "@/app";
 import * as auth from "@/auth/schemas";
-import db from "@/db";
 
 const app = await createApp(Logger.TEST);
 
@@ -18,7 +18,7 @@ async function request(refreshToken: string) {
 describe("POST /auth/refresh", () => {
   it("Returns an access token and a rotated refresh token", async () => {
     await app.ready();
-    const authTokens = await auth.issueTokens(app, await db.user.test.id());
+    const authTokens = await auth.issueTokens(app, await testUser.id());
     const response = await request(authTokens.refreshToken);
     assert.strictEqual(response.statusCode, 201);
     const newAuthTokens = auth.Tokens.parse(response.json());

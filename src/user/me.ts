@@ -16,8 +16,8 @@ import * as user from "./schemas";
 const Update = z.object({
   username: user.Username.optional(),
   password: user.Password.optional(),
-  firstName: user.FirstName.optional(),
-  lastName: user.LastName.optional(),
+  firstName: user.Name.optional(),
+  lastName: user.Name.optional(),
   avatar: z
     .object({
       file: z.instanceof(Readable),
@@ -30,8 +30,8 @@ const GetSchema = {
   response: {
     200: z.object({
       username: user.Username,
-      firstName: user.FirstName,
-      lastName: user.LastName,
+      firstName: user.Name,
+      lastName: user.Name,
     }),
     "4xx": Response4xx,
   },
@@ -80,7 +80,10 @@ export default async function route(app: App) {
       where: { id: req.user.id },
       data: {
         username: data.username,
-        passwordHash: data.password && (await argon2.hash(data.password)),
+        passwordHash:
+          data.password !== undefined
+            ? await argon2.hash(data.password)
+            : undefined,
         firstName: data.firstName,
         lastName: data.lastName,
       },

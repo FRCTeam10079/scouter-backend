@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import * as argon2 from "@node-rs/argon2";
+import * as testUser from "test/user";
 import { createApp, Logger } from "@/app";
 import { TEAM_PASSWORD } from "@/auth/route";
 import db from "@/db";
@@ -36,7 +37,7 @@ describe("POST /auth/sign-up", () => {
       method: "POST",
       url: "/auth/sign-up",
       body: {
-        username: db.user.test.username,
+        username: testUser.USERNAME,
         password: "food",
         firstName: "John",
         lastName: "Doe",

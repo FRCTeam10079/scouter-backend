@@ -24,7 +24,6 @@ const openaiApiKey = await rl.question("Enter your OpenAI API key: ");
 rl.close();
 
 const envFileText = `\
-NODE_ENV=${isProduction ? "production" : "development"}
 DATABASE_URL=${databaseUrl}
 JWT_SECRET=${randomBytes(32).toString("hex")}
 OPENAI_API_KEY=${openaiApiKey}

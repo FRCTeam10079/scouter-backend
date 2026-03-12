@@ -1,9 +1,10 @@
 import * as argon2 from "@node-rs/argon2";
+import * as testUser from "test/user";
 import db from "@/db";
 
 const testUserData = {
-  username: db.user.test.username,
-  passwordHash: await argon2.hash(db.user.test.password),
+  username: testUser.USERNAME,
+  passwordHash: await argon2.hash(testUser.PASSWORD),
   firstName: "Risith",
   lastName: "Kankanamge",
 };
@@ -11,7 +12,7 @@ const testUserData = {
 try {
   // Ensure that a test user exists in the database.
   await db.user.upsert({
-    where: { username: db.user.test.username },
+    where: { username: testUser.USERNAME },
     create: testUserData,
     update: {
       passwordHash: testUserData.passwordHash,
