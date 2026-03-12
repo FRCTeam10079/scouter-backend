@@ -9,7 +9,9 @@ import * as report from "./schemas";
 const GetSchema = {
   querystring: z.object({
     userId: CoercedInt.nonnegative().optional(),
-    eventCode: report.EventCode.optional(),
+    eventCode: z
+      .union([report.EventCode, z.array(report.EventCode)])
+      .optional(),
     matchType: z.enum(MatchType).optional(),
     minMatchNumber: report.CoercedMatchNumber.optional(),
     maxMatchNumber: report.CoercedMatchNumber.optional(),
@@ -23,21 +25,21 @@ const GetSchema = {
       .union([z.enum(StartingPosition), z.array(z.enum(StartingPosition))])
       .optional(),
 
-    autoMinHubScores: CoercedInt.min(1).optional(),
+    autoMinHubScores: CoercedInt.positive().optional(),
     autoMaxHubMisses: CoercedInt.nonnegative().optional(),
     autoLevel1: z.boolean().optional(),
-    autoMinPasses: CoercedInt.min(1).optional(),
+    autoMinPasses: CoercedInt.positive().optional(),
     autoCollectDepot: z.boolean().optional(),
     autoCollectNeutral: z.boolean().optional(),
     autoCollectOutpost: z.boolean().optional(),
     autoDidNotDisruptNz: z.boolean().optional(),
 
-    teleopMinHubScores: CoercedInt.min(1).optional(),
+    teleopMinHubScores: CoercedInt.positive().optional(),
     teleopMaxHubMisses: CoercedInt.nonnegative().optional(),
     teleopMinLevel: CoercedInt.min(1).optional(),
     teleopClimbSucceeded: z.boolean().optional(),
     teleopDefended: z.boolean().optional(),
-    teleopMinPasses: CoercedInt.min(1).optional(),
+    teleopMinPasses: CoercedInt.positive().optional(),
 
     endgameMinLevel: CoercedInt.min(1).optional(),
     endgameClimbSucceeded: z.boolean().optional(),
@@ -68,7 +70,10 @@ export default async function route(app: App) {
     return await db.report.findMany({
       where: {
         userId: req.query.userId,
-        eventCode: req.query.eventCode,
+        eventCode:
+          typeof req.query.eventCode === "string"
+            ? req.query.eventCode
+            : { in: req.query.eventCode },
         matchType: req.query.matchType,
         matchNumber: {
           gte: req.query.minMatchNumber,
