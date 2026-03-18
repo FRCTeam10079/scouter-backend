@@ -60,7 +60,7 @@ model Report {
   teleopDefended    Boolean
 
   endgameNotes       String  @db.VarChar(400)
-  endgameLevel       Int     @default(0) @db.SmallInt
+  endgameLevel       Int     @db.SmallInt
   endgameClimbFailed Boolean
 }
 

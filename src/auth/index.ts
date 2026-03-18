@@ -16,7 +16,10 @@ export default async function route(app: App) {
  * header. Upon success, `req.user.id` is set to the user's id. Upon failure,
  * a 401 status code is returned. */
 export async function authenticate(req: FastifyRequest, reply: FastifyReply) {
-  if (req.method === "POST" && req.url.startsWith("/auth/")) {
+  if (
+    req.method === "OPTIONS" ||
+    (req.method === "POST" && req.url.startsWith("/auth/"))
+  ) {
     return;
   }
   try {

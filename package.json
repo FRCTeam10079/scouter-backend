@@ -7,7 +7,8 @@
   "scripts": {
     "setup": "node setup.js",
     "setup:prod": "node setup.js --prod",
-    "dev": "cross-env NODE_ENV=development tsx watch --env-file=.env src/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx --env-file=.env src/index.ts",
+    "dev:watch": "cross-env NODE_ENV=development tsx watch --env-file=.env src/index.ts",
     "build": "tsc -p tsconfig.prod.json && tsc-alias -p tsconfig.prod.json",
     "start": "cross-env NODE_ENV=production node --env-file=.env build/index.js",
     "reset-db": "prisma migrate reset --force && prisma generate && prisma db seed",
