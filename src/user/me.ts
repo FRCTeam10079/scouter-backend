@@ -2,7 +2,6 @@ import fs from "node:fs";
 import { rm as deleteFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import fastifyMultipart from "@fastify/multipart";
 import * as argon2 from "@node-rs/argon2";
 import sharp from "sharp";
 import z from "zod";
@@ -55,8 +54,6 @@ const DeleteSchema = {
 };
 
 export default async function route(app: App) {
-  await app.register(fastifyMultipart);
-
   app.get("/me", { schema: GetSchema }, async (req, reply) => {
     const user = await db.user.findUnique({
       where: { id: req.user.id },

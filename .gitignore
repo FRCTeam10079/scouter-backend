@@ -1,6 +1,6 @@
 /img
 /node_modules
-/src/db/prisma
+/src/db/generated
 /build
 /.idea
 .env*

@@ -1,12 +1,7 @@
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import {
-  Alliance,
-  AutoClimb,
-  MatchType,
-  StartingPosition,
-} from "@/db/prisma/enums";
+import { Alliance, AutoClimb, MatchType } from "@/db/generated/enums";
 import * as report from "./schemas";
 
 const PostSchema = {
@@ -42,9 +37,6 @@ const PostSchema = {
         max: z.int().nonnegative().max(5).optional(),
       })
       .optional(),
-    crossBump: z.boolean().optional(),
-    crossTrench: z.boolean().optional(),
-    startingPositions: z.array(z.enum(StartingPosition)).min(1).optional(),
     auto: z
       .object({
         hubScores: z
@@ -66,9 +58,6 @@ const PostSchema = {
             max: z.int().nonnegative().optional(),
           })
           .optional(),
-        collectDepot: z.boolean().optional(),
-        collectNeutral: z.boolean().optional(),
-        collectOutpost: z.boolean().optional(),
       })
       .optional(),
     teleop: z
@@ -148,11 +137,6 @@ export default function route(app: App) {
           gte: req.body.shootingConfidence.min,
           lte: req.body.shootingConfidence.max,
         },
-        crossBump: req.body.crossBump,
-        crossTrench: req.body.crossTrench,
-        startingPosition: req.body.startingPositions && {
-          in: req.body.startingPositions,
-        },
         autoHubScores: req.body.auto?.hubScores && {
           gte: req.body.auto.hubScores.min,
           lte: req.body.auto.hubScores.max,
@@ -171,9 +155,6 @@ export default function route(app: App) {
           gte: req.body.auto.passes.min,
           lte: req.body.auto.passes.max,
         },
-        autoCollectDepot: req.body.auto?.collectDepot,
-        autoCollectNeutral: req.body.auto?.collectNeutral,
-        autoCollectOutpost: req.body.auto?.collectOutpost,
         teleopHubScores: req.body.teleop?.hubScores && {
           gte: req.body.teleop.hubScores.min,
           lte: req.body.teleop.hubScores.max,

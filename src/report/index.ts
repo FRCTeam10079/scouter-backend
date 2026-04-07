@@ -1,5 +1,5 @@
 import type App from "@/app";
-import { Prisma } from "@/db/prisma/client";
+import { Prisma } from "@/db/generated/client";
 import data from "./data";
 import reports from "./reports";
 import report from "./route";
@@ -20,9 +20,6 @@ export const reportTypes = Prisma.defineExtension({
           autoHubMisses: true,
           autoClimb: true,
           autoPasses: true,
-          autoCollectDepot: true,
-          autoCollectNeutral: true,
-          autoCollectOutpost: true,
           autoNotes: true,
         },
         compute(report) {
@@ -31,9 +28,6 @@ export const reportTypes = Prisma.defineExtension({
             hubMisses: report.autoHubMisses,
             climb: report.autoClimb,
             passes: report.autoPasses,
-            collectDepot: report.autoCollectDepot,
-            collectNeutral: report.autoCollectNeutral,
-            collectOutpost: report.autoCollectOutpost,
             notes: report.autoNotes,
           };
         },

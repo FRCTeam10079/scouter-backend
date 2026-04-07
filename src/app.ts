@@ -1,5 +1,6 @@
 import fastifyCors from "@fastify/cors";
 import fastifyJwt from "@fastify/jwt";
+import fastifyMultipart from "@fastify/multipart";
 import fastify, {
   type FastifyBaseLogger,
   type FastifyInstance,
@@ -18,6 +19,7 @@ import {
 } from "fastify-type-provider-zod";
 import auth, { authenticate } from "./auth";
 import img from "./img";
+import pitReport from "./pit-report";
 import report from "./report";
 import user from "./user";
 
@@ -43,6 +45,8 @@ export async function createApp(logger: Logger): Promise<App> {
   await app.register(fastifyJwt, { secret: process.env.JWT_SECRET });
   app.addHook("onRequest", authenticate);
 
+  await app.register(fastifyMultipart);
+
   if (process.env.NODE_ENV === "development") {
     // CORS is used since the frontend can be tested in a web browser.
     await app.register(fastifyCors, {
@@ -52,6 +56,7 @@ export async function createApp(logger: Logger): Promise<App> {
 
   await app.register(auth);
   await app.register(img);
+  await app.register(pitReport);
   await app.register(report);
   await app.register(user);
 

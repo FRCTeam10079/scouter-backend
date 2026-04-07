@@ -102,7 +102,7 @@ type Schema = {
   password?: string; // 1-50 characters
   firstName?: string; // 1-50 characters
   lastName?: string; // <=50 characters
-  avatar?: File | ""; // image - "" to have no avatar
+  avatar?: File | ""; // image, "" to have no avatar
 };
 ```
 
@@ -139,25 +139,12 @@ type ReportData = {
   minorFouls: number; // nonnegative integer
   majorFouls: number; // nonnegative integer
   secondsIncapacitated: number; // nonnegative integer
-  shootingConfidence: number, // unsigned integer <=5
-  crossBump: boolean;
-  crossTrench: boolean;
-  startingPosition:
-    | "LEFT"
-    | "LEFT_BUMP"
-    | "LEFT_TRENCH"
-    | "CENTER"
-    | "RIGHT"
-    | "RIGHT_BUMP"
-    | "RIGHT_TRENCH";
+  shootingConfidence: number, // nonnegative integer <=5
   auto: {
     hubScores: number; // nonnegative integer
     hubMisses: number; // nonnegative integer
     climb: "NONE" | "LEVEL1" | "FAILED";
     passes: number; // nonnegative integer
-    collectDepot: boolean;
-    collectNeutral: boolean;
-    collectOutpost: boolean;
     notes: string; // <=400 characters
   };
   teleop: {
@@ -224,17 +211,6 @@ type Schema = {
     min?: number;
     max?: number;
   };
-  crossBump?: boolean;
-  crossTrench?: boolean;
-  startingPositions?: (
-    | "LEFT"
-    | "LEFT_BUMP"
-    | "LEFT_TRENCH"
-    | "CENTER"
-    | "RIGHT"
-    | "RIGHT_BUMP"
-    | "RIGHT_TRENCH"
-  )[];
   auto?: {
     hubScores?: {
       min?: number; // integer >=1
@@ -249,9 +225,6 @@ type Schema = {
       min?: number; // integer >=1
       max?: number; // nonnegative integer
     };
-    collectDepot?: boolean;
-    collectNeutral?: boolean;
-    collectOutpost?: boolean;
   };
   teleop?: {
     hubScores?: {
@@ -301,6 +274,62 @@ Uploads reports in bulk. This route is intended for use with the device used to 
 type Schema = (ReportData & {
   userId: number; // nonnegative integer
 })[];
+```
+
+### POST /pit-report
+
+Creates a pit scouting report. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 400 status code is returned with `code` set to `INVALID_FORM_DATA`. Upon success, a 201 status code is returned. The following schema is used for form data:
+```ts
+type Schema = {
+  createdAt: string; // ISO 8601 date-time
+  eventCode: string; // 5 characters
+  teamNumber: number; // integer 1-20000
+  drivetrain: "SWERVE" | "TANK" | "MECANUM";
+  shooter:
+    | "SINGLE"
+    | "DUAL"
+    | "TRIPLE"
+    | "QUAD"
+    | "TURRET"
+    | "DUAL_TURRET"
+    | "DRUM"
+    | "OTHER";
+  indexer: "VERTICAL" | "SPINDEXER" | "ROLLER" | "BELT" | "GRAVITY";
+  estimatedBps: number; // positive
+  hopperCapacity: number; // positive integer
+  climbLevel: number; // nonnegative integer <=3
+  canPass: boolean;
+  canDefend: boolean;
+  canCrossBump: boolean;
+  canCrossTrench: boolean;
+  // string - use multiple fields with the same name and serialize each one as
+  // JSON
+  autoRoutines: {
+    startingPosition:
+      | "LEFT"
+      | "LEFT_BUMP"
+      | "LEFT_TRENCH"
+      | "CENTER"
+      | "RIGHT"
+      | "RIGHT_BUMP"
+      | "RIGHT_TRENCH";
+    actions: (
+      | "COLLECT_DEPOT"
+      | "COLLECT_OUTPOST"
+      | "CROSS_LEFT_BUMP"
+      | "CROSS_LEFT_TRENCH"
+      | "CROSS_RIGHT_BUMP"
+      | "CROSS_RIGHT_TRENCH"
+      | "SHOOT"
+      | "CLIMB"
+    )[];
+    expectedHubScores: number; // nonnegative integer
+  }[];
+  driverEvents: number; // nonnegative integer
+  weightLbs: number; // positive
+  notes: string; // <=400 characters
+  photo: File | ""; // image, "" for no photo
+};
 ```
 
 ### Authentication

@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../src/db/prisma"
+  output   = "../src/db/generated"
 }
 
 datasource db {
@@ -16,6 +16,7 @@ model User {
   lastName      String         @db.VarChar(50)
   avatarId      String?        @unique @db.Uuid
   reports       Report[]
+  pitReports    PitReport[]
 }
 
 model RefreshToken {
@@ -26,33 +27,27 @@ model RefreshToken {
 }
 
 model Report {
-  id                   Int              @id @default(autoincrement())
-  user                 User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                   Int       @id @default(autoincrement())
+  user                 User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId               Int?
   createdAt            DateTime
-  eventCode            String           @db.Char(5)
+  eventCode            String    @db.Char(5)
   matchType            MatchType
-  matchNumber          Int              @db.SmallInt
+  matchNumber          Int       @db.SmallInt
   alliance             Alliance
-  teamNumber           Int              @db.SmallInt
+  teamNumber           Int       @db.SmallInt
   inMatch              Boolean
-  notes                String           @db.VarChar(400)
-  minorFouls           Int              @db.SmallInt
-  majorFouls           Int              @db.SmallInt
-  secondsIncapacitated Int              @db.SmallInt
-  shootingConfidence   Int              @db.SmallInt
-  crossBump            Boolean
-  crossTrench          Boolean
-  startingPosition     StartingPosition
+  notes                String    @db.VarChar(400)
+  minorFouls           Int       @db.SmallInt
+  majorFouls           Int       @db.SmallInt
+  secondsIncapacitated Int       @db.SmallInt
+  shootingConfidence   Int       @db.SmallInt
 
-  autoHubScores      Int       @db.SmallInt
-  autoHubMisses      Int       @db.SmallInt
-  autoClimb          AutoClimb
-  autoPasses         Int       @db.SmallInt
-  autoCollectDepot   Boolean
-  autoCollectNeutral Boolean
-  autoCollectOutpost Boolean
-  autoNotes          String    @db.VarChar(400)
+  autoHubScores Int       @db.SmallInt
+  autoHubMisses Int       @db.SmallInt
+  autoClimb     AutoClimb
+  autoPasses    Int       @db.SmallInt
+  autoNotes     String    @db.VarChar(400)
 
   teleopHubScores   Int     @db.SmallInt
   teleopHubMisses   Int     @db.SmallInt
@@ -94,23 +89,36 @@ enum AutoClimb {
   FAILED
 }
 
+// Types of robots:
+// cleanup - scoring from one spot
+// ferrying
+// shoveling
+// defense
+// cycle - go to neutral, go back, and score
+
 model PitReport {
-  id           Int           @id @default(autoincrement())
-  eventCode    String        @db.Char(5)
-  teamNumber   Int           @db.SmallInt
-  drivetrain   Drivetrain
-  shooter      Shooter
-  drumShooter  Boolean
-  estimatedBps Decimal
-  driverEvents Int           @db.SmallInt
-  weightLbs    Decimal
-  widthIn      Decimal
-  lengthIn     Decimal
-  canFerry     Boolean
-  climbLevel   Int           @db.SmallInt
-  autoPaths    AutoRoutine[]
-  notes        String        @db.VarChar(400)
-  photoId      String        @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             Int           @id @default(autoincrement())
+  user           User          @relation(fields: [userId], references: [id])
+  userId         Int
+  createdAt      DateTime
+  eventCode      String        @db.Char(5)
+  teamNumber     Int           @db.SmallInt
+  drivetrain     Drivetrain
+  shooter        Shooter
+  estimatedBps   Decimal?
+  hopperCapacity Int           @db.SmallInt
+  climbLevel     Int           @db.SmallInt
+  canPass        Boolean
+  canDefend      Boolean
+  canCrossBump   Boolean
+  canCrossTrench Boolean
+  autoRoutines   AutoRoutine[]
+  // According to Adrian, we don't have enough aura to be asking for driver
+  // hours.
+  driverEvents   Int           @db.SmallInt
+  weightLbs      Decimal
+  notes          String        @db.VarChar(400)
+  photoId        String?       @unique @db.Uuid
 }
 
 enum Drivetrain {
@@ -123,23 +131,37 @@ enum Shooter {
   SINGLE
   DUAL
   TRIPLE
+  QUAD
   TURRET
+  DUAL_TURRET
+  DRUM
+  OTHER
+}
+
+enum Indexer {
+  VERTICAL
+  SPINDEXER
+  ROLLER
+  BELT
+  GRAVITY
 }
 
 model AutoRoutine {
-  id               Int              @id @default(autoincrement())
-  report           PitReport        @relation(fields: [reportId], references: [id])
-  reportId         Int
-  startingPosition StartingPosition
-  actions          AutoAction[]
+  id                Int              @id @default(autoincrement())
+  report            PitReport        @relation(fields: [reportId], references: [id])
+  reportId          Int
+  startingPosition  StartingPosition
+  actions           AutoAction[]
+  expectedHubScores Int              @db.SmallInt
 }
 
 enum AutoAction {
   COLLECT_DEPOT
-  COLLECT_NEUTRAL
   COLLECT_OUTPOST
-  CROSS_BUMP
-  CROSS_TRENCH
+  CROSS_LEFT_BUMP
+  CROSS_LEFT_TRENCH
+  CROSS_RIGHT_BUMP
+  CROSS_RIGHT_TRENCH
   SHOOT
   CLIMB
 }

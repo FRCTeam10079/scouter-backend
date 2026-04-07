@@ -1,17 +1,15 @@
 import z from "zod";
-import {
-  Alliance,
-  AutoClimb,
-  MatchType,
-  StartingPosition,
-} from "@/db/prisma/enums";
-import type { ReportCreateInput } from "@/db/prisma/models";
+import { Alliance, AutoClimb, MatchType } from "@/db/generated/enums";
+import type { ReportCreateInput } from "@/db/generated/models";
+import { CoercedInt } from "@/schemas";
 
 export const EventCode = z.string().length(5);
 export const MatchNumber = z.int().min(1).max(200);
 export const TeamNumber = z.int().min(1).max(20000);
+export const CoercedTeamNumber = CoercedInt.min(1).max(20000);
 export const Level = z.int().nonnegative().max(3);
-const Notes = z.string().max(400);
+export const CoercedLevel = CoercedInt.nonnegative().max(3);
+export const Notes = z.string().max(400);
 
 export const Data = z.object({
   createdAt: z.iso.datetime(),
@@ -26,17 +24,11 @@ export const Data = z.object({
   majorFouls: z.int().nonnegative(),
   secondsIncapacitated: z.int().nonnegative(),
   shootingConfidence: z.int().nonnegative().max(5),
-  crossBump: z.boolean(),
-  crossTrench: z.boolean(),
-  startingPosition: z.enum(StartingPosition),
   auto: z.object({
     hubScores: z.int().nonnegative(),
     hubMisses: z.int().nonnegative(),
     climb: z.enum(AutoClimb),
     passes: z.int().nonnegative(),
-    collectDepot: z.boolean(),
-    collectNeutral: z.boolean(),
-    collectOutpost: z.boolean(),
     notes: Notes,
   }),
   teleop: z.object({
@@ -71,17 +63,11 @@ export function dataToDb(data: Data, userId: number): ReportCreateInput {
     majorFouls: data.majorFouls,
     secondsIncapacitated: data.secondsIncapacitated,
     shootingConfidence: data.shootingConfidence,
-    crossBump: data.crossBump,
-    crossTrench: data.crossTrench,
-    startingPosition: data.startingPosition,
 
     autoHubScores: data.auto.hubScores,
     autoHubMisses: data.auto.hubMisses,
     autoClimb: data.auto.climb,
     autoPasses: data.auto.passes,
-    autoCollectDepot: data.auto.collectDepot,
-    autoCollectNeutral: data.auto.collectNeutral,
-    autoCollectOutpost: data.auto.collectOutpost,
     autoNotes: data.auto.notes,
 
     teleopHubScores: data.teleop.hubScores,
