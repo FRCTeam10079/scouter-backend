@@ -15,7 +15,12 @@ const GetSchema: FastifySchema = {
 export default async function route(app: App) {
   app.get("/users", { schema: GetSchema }, () => {
     return db.user.findMany({
-      select: { id: true, firstName: true, lastName: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        avatarId: true,
+      },
     });
   });
 }

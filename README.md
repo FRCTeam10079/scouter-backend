@@ -10,7 +10,7 @@ pnpm run setup
 ```
 node setup.js
 ```
-Sets up the environment by installing PNPM if necessary, installing all packages, creating a .env file, and updating the database. This should be run after cloning the repository. PostgreSQL should already be installed, and you should have an OpenAI API key.
+Sets up the environment by installing PNPM if necessary, installing all packages, creating a .env file, and creating/updating the database. This should be run after cloning the repository, and PostgreSQL should already be installed.
 
 ```
 pnpm setup:prod
@@ -70,6 +70,17 @@ type Schema = {
 ```
 See https://fastify.dev/docs/latest/Reference/Errors/#fst_err_validation for generic error codes. Routes that are not for authentication require the Authorization header to be set with a valid bearer token. See https://github.com/fastify/fastify-jwt?tab=readme-ov-file#error-code for possible error codes.
 
+### GET /img/:id
+
+Returns the image with `id`. `id` must be a nonnegative integer. The following schema is used for query parameters:
+```ts
+type Schema = {
+  width?: number, // nonnegative integer
+  height?: number, // nonnegative integer
+};
+```
+If one dimension is specified but not the other, the other dimension will be scaled automatically. If the image does not exist, a 404 status code is returned with `code` set to `IMAGE_NOT_FOUND`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP with React Native on android.
+
 ### GET /me
 
 Returns basic information about the user. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 200 status code is returned with the following response body:
@@ -78,6 +89,7 @@ type Schema = {
   username: string; // 1-30 characters
   firstName: string; // 1-50 characters
   lastName: string; // 1-50 characters
+  avatarId: string | null; // UUID V4
 };
 ```
 
@@ -90,7 +102,7 @@ type Schema = {
   password?: string; // 1-50 characters
   firstName?: string; // 1-50 characters
   lastName?: string; // <=50 characters
-  avatar?: File; // image
+  avatar?: File | ""; // image - "" to have no avatar
 };
 ```
 
@@ -103,15 +115,12 @@ Deletes the user's account. A 204 status code is always returned.
 Returns a list of users. A 200 status code is always returned with the following response body:
 ```ts
 type Schema = {
-  id: number; // unsigned integer
+  id: number; // nonnegative integer
   firstName: string; // 1-30 characters
   lastName: string; // 1-30 characters
+  avatarId: string | null; // UUID V4
 }[];
 ```
-
-### GET /avatar/:userId
-
-Returns the specified user's avatar. `userId` must be an unsigned integer. If the user does not have a profile picture or their account has been deleted, a 404 status code is returned with `code` set to `NO_SUCH_AVATAR`. `size` is required as a query parameter to specify the size to load the image in and must an integer be between `32` and `512`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP on android.
 
 ### Reports
 
@@ -123,51 +132,62 @@ type ReportData = {
   eventCode: string; // 5 characters
   matchType: "QUALIFICATION" | "PLAYOFF";
   matchNumber: number; // integer 1-200
+  alliance: "RED" | "BLUE";
   teamNumber: number; // integer 1-20000
+  inMatch: boolean;
   notes: string; // <=400 characters
-  minorFouls: number; // unsigned integer
-  majorFouls: number; // unsigned integer
-  secondsIncapacitated: number; // unsigned integer
-  overBump: boolean;
-  underTrench: boolean;
-  startingPosition: "LEFT" | "CENTER" | "RIGHT";
+  minorFouls: number; // nonnegative integer
+  majorFouls: number; // nonnegative integer
+  secondsIncapacitated: number; // nonnegative integer
+  shootingConfidence: number, // unsigned integer <=5
+  crossBump: boolean;
+  crossTrench: boolean;
+  startingPosition:
+    | "LEFT"
+    | "LEFT_BUMP"
+    | "LEFT_TRENCH"
+    | "CENTER"
+    | "RIGHT"
+    | "RIGHT_BUMP"
+    | "RIGHT_TRENCH";
   auto: {
-    notes: string; // <=400 characters
-    hubScores: number; // unsigned integer
-    hubMisses: number; // unsigned integer
+    hubScores: number; // nonnegative integer
+    hubMisses: number; // nonnegative integer
     climb: "NONE" | "LEVEL1" | "FAILED";
-    passes: number; // unsigned integer
+    passes: number; // nonnegative integer
     collectDepot: boolean;
     collectNeutral: boolean;
     collectOutpost: boolean;
-    disruptNz: boolean;
+    notes: string; // <=400 characters
   };
   teleop: {
-    notes: string; // <=400 characters
-    hubScores: number; // unsigned integer
-    hubMisses: number; // unsigned integer
-    level: number; // unsigned integer <=3 - zero means the robot did not climb
+    hubScores: number; // nonnegative integer
+    hubMisses: number; // nonnegative integer
+    level: number; // nonnegative integer <=3 - zero means the robot did not climb
     climbFailed: boolean;
+    passes: number; // nonnegative integer
     defended: boolean;
-    passes: number; // unsigned integer
+    wasDefended: boolean;
+    notes: string; // <=400 characters
   };
   endgame: {
-    notes: string; // <=400 characters
-    level: number; // unsigned integer <=3 - zero means the robot did not climb
+    level: number; // nonnegative integer <=3 - zero means the robot did not climb
     climbFailed: boolean;
+    notes: string; // <=400 characters
   };
 };
 ```
 
 #### GET /report/:id
 
-Returns a scouting report. `id` must be an unsigned integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
+Returns a scouting report. `id` must be a nonnegative integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
 ```ts
 type Schema = ReportData & {
   user: {
-    id: number; // unsigned integer
+    id: number; // nonnegative integer
     firstName: string; // 1-30 characters
     lastName: string; // 1-30 characters
+    avatarId: string | null; // UUID V4
   } | null;
 };
 ```
@@ -176,57 +196,97 @@ type Schema = ReportData & {
 
 Creates a scouting report. A 201 status code is always returned. `ReportData` is used for the request body schema.
 
-#### GET /reports
+#### POST /get-reports
 
-Returns a list of reports. Query parameters can be used to filter the results. The following schema is used for query parameters:
+Returns a list of reports and can be filtered. The following schema request body schema is used:
 ```ts
 type Schema = {
-  userId?: number; // unsigned integer
-  eventCode?: string; // 5 characters
+  userIds?: number[]; // nonnegative integers
+  eventCodes?: string[]; // 5 character strings
   matchType?: "QUALIFICATION" | "PLAYOFF";
-  minMatchNumber?: number; // integer 1-200
-  maxMatchNumber?: number; // integer 1-200
-  teamNumber?: number; // integer 1-20000
-  maxMinorFouls?: number; // unsigned integer
-  maxMajorFouls?: number; // unsigned integer
-  maxSecondsIncapacitated?: number; // unsigned integer
-  overBump?: boolean;
-  underTrench?: boolean;
-  startingPosition?: "LEFT" | "CENTER" | "RIGHT" | ("LEFT" | "CENTER" | "RIGHT")[];
-
-  autoMinHubScores?: number; // integer >=1
-  autoMaxHubMisses?: number; // integer >=1
-  autoLevel1?: boolean;
-  autoMinPasses?: number; // integer >=1
-  autoCollectDepot?: boolean;
-  autoCollectNeutral?: boolean;
-  autoCollectOutpost?: boolean;
-  autoDidNotDisruptNz?: boolean;
-
-  teleopMinHubScores?: number; // integer >=1
-  teleopMaxHubMisses?: number; // integer >=1
-  teleopMinLevel?: number; // integer 1-3
-  teleopClimbSucceeded?: boolean;
-  teleopDefended?: boolean;
-  teleopMinPasses?: number; // integer >=1
-
-  endgameMinLevel?: number; // integer 1-3
-  endgameClimbSucceeded?: boolean;
-
-  take: number; // unsigned integer - return N reports
-  skip: number; // unsigned integer - skip first N reports
+  matchNumbers?: number[]; // integers 1-200
+  alliance?: "RED" | "BLUE";
+  teamNumbers?: number[]; // integers 1-20000
+  inMatch?: boolean;
+  minorFouls?: {
+    min?: number; // integer >=1
+    max?: number; // nonnegative integer
+  };
+  majorFouls?: {
+    min?: number; // integer >=1
+    max?: number; // nonnegative integer
+  };
+  secondsIncapacitated?: {
+    min?: number; // integer >=1
+    max?: number; // nonnegative integer
+  };
+  shootingConfidence?: {
+    min?: number;
+    max?: number;
+  };
+  crossBump?: boolean;
+  crossTrench?: boolean;
+  startingPositions?: (
+    | "LEFT"
+    | "LEFT_BUMP"
+    | "LEFT_TRENCH"
+    | "CENTER"
+    | "RIGHT"
+    | "RIGHT_BUMP"
+    | "RIGHT_TRENCH"
+  )[];
+  auto?: {
+    hubScores?: {
+      min?: number; // integer >=1
+      max?: number; // nonnegative integer
+    };
+    hubMisses?: {
+      min?: number; // integer >=1
+      max?: number; // nonnegative integer
+    };
+    level1?: boolean;
+    passes?: {
+      min?: number; // integer >=1
+      max?: number; // nonnegative integer
+    };
+    collectDepot?: boolean;
+    collectNeutral?: boolean;
+    collectOutpost?: boolean;
+  };
+  teleop?: {
+    hubScores?: {
+      min?: number; // integer >=1
+      max?: number; // nonnegative integer
+    };
+    hubMisses?: {
+      min?: number; // integer >=1
+      max?: number; // nonnegative integer
+    };
+    passes?: {
+      min?: number; // integer >=1
+      max?: number; // nonnegative integer
+    };
+    defended?: boolean;
+    wasDefended?: boolean;
+  };
+  endgame?: {
+    level?: {
+      min?: number; // integer 1-3
+      max?: number; // nonnegative integer <=3
+    };
+    climbFailed?: boolean;
+  };
+  take?: number; // nonnegative integer - take N reports
+  skip?: number; // nonnegative integer - skip the first N reports
 };
 ```
 A 200 status code is always returned with the following response body:
 ```ts
 type Schema = {
-  id: number; // unsigned integer
+  id: number; // nonnegative integer
+  matchType: "QUALIFICATION" | "PLAYOFF",
+  matchNumber: number; // nonnegative integer 1-200
   teamNumber: number; // integer 1-20000
-  user: {
-    id: number; // unsigned integer
-    firstName: string; // 1-50 characters
-    lastName: string; // 1-50 characters
-  } | null;
 }[];
 ```
 
@@ -236,60 +296,12 @@ Returns the data for every report so it can be downloaded before an event and us
 
 #### POST /reports/data
 
-Uploads reports en masse. This route is intended for use with the device used to collect QR codes. The following request body schema is used:
+Uploads reports in bulk. This route is intended for use with the device used to collect QR codes. The following request body schema is used:
 ```ts
 type Schema = (ReportData & {
-  userId: number; // unsigned integer
+  userId: number; // nonnegative integer
 })[];
 ```
-
-#### GET /rankings
-
-Returns team ranking data using the OpenAI API. Upon success, a 200 status code is returned with the following response body:
-```ts
-type Schema = Record<
-  number,
-  {
-    score: number; // unsigned <=1 - aggregate score
-    confidence: number; // unsigned <=1
-    overview: string; // Markdown
-    avg: {
-      minorFouls: number; // unsigned
-      majorFouls: number; // unsigned
-      secondsIncapacitated: number; // unsigned
-      overBump: number; // unsigned <=1
-      underTrench: number; // unsigned <=1
-      auto: {
-        hubScores: number; // unsigned
-        hubMisses: number; // unsigned
-        climb: {
-          none: number; // unsigned <=1
-          level1: number; // unsigned <=1
-          failed: number; // unsigned <=1
-        };
-        passes: number; // unsigned
-        collectDepot: number; // unsigned <=1
-        collectNeutral: number; // unsigned <=1
-        collectOutpost: number; // unsigned <=1
-        disruptNz: number; // unsigned <=1
-      };
-      teleop: {
-        hubScores: number; // unsigned
-        hubMisses: number; // unsigned
-        level: number; // unsigned <=1
-        climbFailed: number; // unsigned <=1
-        defended: number; // unsigned <=1
-        passes: number; // unsigned
-      };
-      endgame: {
-        level: number; // unsigned <=1
-        climbFailed: number; // unsigned <=1
-      };
-    };
-  }
->;
-```
-I would personally recommend having a slider on the frontend that uses a formula like $score\times(n^2+(1-n^2)\times confidence)$ to rank teams with a default value around $0.7$.
 
 ### Authentication
 

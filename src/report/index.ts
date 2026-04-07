@@ -1,13 +1,11 @@
 import type App from "@/app";
 import { Prisma } from "@/db/prisma/client";
 import data from "./data";
-import rankings from "./rankings";
 import reports from "./reports";
 import report from "./route";
 
 export default async function route(app: App) {
   await app.register(data);
-  await app.register(rankings);
   await app.register(report);
   await app.register(reports);
 }
@@ -18,7 +16,6 @@ export const reportTypes = Prisma.defineExtension({
     report: {
       auto: {
         needs: {
-          autoNotes: true,
           autoHubScores: true,
           autoHubMisses: true,
           autoClimb: true,
@@ -26,11 +23,10 @@ export const reportTypes = Prisma.defineExtension({
           autoCollectDepot: true,
           autoCollectNeutral: true,
           autoCollectOutpost: true,
-          autoDisruptNz: true,
+          autoNotes: true,
         },
         compute(report) {
           return {
-            notes: report.autoNotes,
             hubScores: report.autoHubScores,
             hubMisses: report.autoHubMisses,
             climb: report.autoClimb,
@@ -38,43 +34,41 @@ export const reportTypes = Prisma.defineExtension({
             collectDepot: report.autoCollectDepot,
             collectNeutral: report.autoCollectNeutral,
             collectOutpost: report.autoCollectOutpost,
-            disruptNz: report.autoDisruptNz,
+            notes: report.autoNotes,
           };
         },
       },
       teleop: {
         needs: {
-          teleopNotes: true,
           teleopHubScores: true,
           teleopHubMisses: true,
-          teleopLevel: true,
-          teleopClimbFailed: true,
-          teleopDefended: true,
           teleopPasses: true,
+          teleopDefended: true,
+          teleopWasDefended: true,
+          teleopNotes: true,
         },
         compute(report) {
           return {
-            notes: report.teleopNotes,
             hubScores: report.teleopHubScores,
             hubMisses: report.teleopHubMisses,
-            level: report.teleopLevel,
-            climbFailed: report.teleopClimbFailed,
-            defended: report.teleopDefended,
             passes: report.teleopPasses,
+            defended: report.teleopDefended,
+            wasDefended: report.teleopWasDefended,
+            notes: report.teleopNotes,
           };
         },
       },
       endgame: {
         needs: {
-          endgameNotes: true,
           endgameLevel: true,
           endgameClimbFailed: true,
+          endgameNotes: true,
         },
         compute(report) {
           return {
-            notes: report.endgameNotes,
             level: report.endgameLevel,
             climbFailed: report.endgameClimbFailed,
+            notes: report.endgameNotes,
           };
         },
       },

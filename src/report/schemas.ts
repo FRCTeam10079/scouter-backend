@@ -1,36 +1,35 @@
 import z from "zod";
-import { AutoClimb, MatchType, StartingPosition } from "@/db/prisma/enums";
+import {
+  Alliance,
+  AutoClimb,
+  MatchType,
+  StartingPosition,
+} from "@/db/prisma/enums";
 import type { ReportCreateInput } from "@/db/prisma/models";
-import { CoercedInt } from "@/schemas";
 
 export const EventCode = z.string().length(5);
 export const MatchNumber = z.int().min(1).max(200);
-export const CoercedMatchNumber = CoercedInt.min(1).max(200);
 export const TeamNumber = z.int().min(1).max(20000);
-export const CoercedTeamNumber = CoercedInt.min(1).max(20000);
+export const Level = z.int().nonnegative().max(3);
 const Notes = z.string().max(400);
-
-const Endgame = z.object({
-  notes: Notes,
-  level: z.int().nonnegative().max(3),
-  climbFailed: z.boolean(),
-});
 
 export const Data = z.object({
   createdAt: z.iso.datetime(),
   eventCode: EventCode,
   matchType: z.enum(MatchType),
   matchNumber: MatchNumber,
+  alliance: z.enum(Alliance),
   teamNumber: TeamNumber,
+  inMatch: z.boolean(),
   notes: Notes,
   minorFouls: z.int().nonnegative(),
   majorFouls: z.int().nonnegative(),
   secondsIncapacitated: z.int().nonnegative(),
-  overBump: z.boolean(),
-  underTrench: z.boolean(),
+  shootingConfidence: z.int().nonnegative().max(5),
+  crossBump: z.boolean(),
+  crossTrench: z.boolean(),
   startingPosition: z.enum(StartingPosition),
   auto: z.object({
-    notes: Notes,
     hubScores: z.int().nonnegative(),
     hubMisses: z.int().nonnegative(),
     climb: z.enum(AutoClimb),
@@ -38,15 +37,21 @@ export const Data = z.object({
     collectDepot: z.boolean(),
     collectNeutral: z.boolean(),
     collectOutpost: z.boolean(),
-    disruptNz: z.boolean(),
+    notes: Notes,
   }),
-  teleop: Endgame.extend({
+  teleop: z.object({
     hubScores: z.int().nonnegative(),
     hubMisses: z.int().nonnegative(),
-    defended: z.boolean(),
     passes: z.int().nonnegative(),
+    defended: z.boolean(),
+    wasDefended: z.boolean(),
+    notes: Notes,
   }),
-  endgame: Endgame,
+  endgame: z.object({
+    level: Level,
+    climbFailed: z.boolean(),
+    notes: Notes,
+  }),
 });
 
 export type Data = z.infer<typeof Data>;
@@ -58,16 +63,18 @@ export function dataToDb(data: Data, userId: number): ReportCreateInput {
     eventCode: data.eventCode,
     matchType: data.matchType,
     matchNumber: data.matchNumber,
+    alliance: data.alliance,
     teamNumber: data.teamNumber,
+    inMatch: data.inMatch,
     notes: data.notes,
     minorFouls: data.minorFouls,
     majorFouls: data.majorFouls,
     secondsIncapacitated: data.secondsIncapacitated,
-    overBump: data.overBump,
-    underTrench: data.underTrench,
+    shootingConfidence: data.shootingConfidence,
+    crossBump: data.crossBump,
+    crossTrench: data.crossTrench,
     startingPosition: data.startingPosition,
 
-    autoNotes: data.auto.notes,
     autoHubScores: data.auto.hubScores,
     autoHubMisses: data.auto.hubMisses,
     autoClimb: data.auto.climb,
@@ -75,18 +82,17 @@ export function dataToDb(data: Data, userId: number): ReportCreateInput {
     autoCollectDepot: data.auto.collectDepot,
     autoCollectNeutral: data.auto.collectNeutral,
     autoCollectOutpost: data.auto.collectOutpost,
-    autoDisruptNz: data.auto.disruptNz,
+    autoNotes: data.auto.notes,
 
-    teleopNotes: data.teleop.notes,
     teleopHubScores: data.teleop.hubScores,
     teleopHubMisses: data.teleop.hubMisses,
-    teleopLevel: data.teleop.level,
-    teleopClimbFailed: data.teleop.climbFailed,
-    teleopDefended: data.teleop.defended,
     teleopPasses: data.teleop.passes,
+    teleopDefended: data.teleop.defended,
+    teleopWasDefended: data.teleop.wasDefended,
+    teleopNotes: data.teleop.notes,
 
-    endgameNotes: data.endgame.notes,
     endgameLevel: data.endgame.level,
     endgameClimbFailed: data.endgame.climbFailed,
+    endgameNotes: data.endgame.notes,
   };
 }

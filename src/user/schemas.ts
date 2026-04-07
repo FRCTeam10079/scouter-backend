@@ -8,4 +8,5 @@ export const Display = z.object({
   id: z.int().nonnegative(),
   firstName: Name,
   lastName: Name,
+  avatarId: z.union([z.uuidv4(), z.null()]),
 });

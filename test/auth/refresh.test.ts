@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
-import * as testUser from "test/user";
+import * as testUser from "@test-user";
 import { createApp, Logger } from "@/app";
 import * as auth from "@/auth/schemas";
 

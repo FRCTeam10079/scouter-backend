@@ -14,6 +14,7 @@ model User {
   refreshTokens RefreshToken[]
   firstName     String         @db.VarChar(50)
   lastName      String         @db.VarChar(50)
+  avatarId      String?        @unique @db.Uuid
   reports       Report[]
 }
 
@@ -32,16 +33,18 @@ model Report {
   eventCode            String           @db.Char(5)
   matchType            MatchType
   matchNumber          Int              @db.SmallInt
+  alliance             Alliance
   teamNumber           Int              @db.SmallInt
+  inMatch              Boolean
   notes                String           @db.VarChar(400)
   minorFouls           Int              @db.SmallInt
   majorFouls           Int              @db.SmallInt
   secondsIncapacitated Int              @db.SmallInt
-  overBump             Boolean
-  underTrench          Boolean
+  shootingConfidence   Int              @db.SmallInt
+  crossBump            Boolean
+  crossTrench          Boolean
   startingPosition     StartingPosition
 
-  autoNotes          String    @db.VarChar(400)
   autoHubScores      Int       @db.SmallInt
   autoHubMisses      Int       @db.SmallInt
   autoClimb          AutoClimb
@@ -49,19 +52,20 @@ model Report {
   autoCollectDepot   Boolean
   autoCollectNeutral Boolean
   autoCollectOutpost Boolean
-  autoDisruptNz      Boolean
+  autoNotes          String    @db.VarChar(400)
 
-  teleopNotes       String  @db.VarChar(400)
   teleopHubScores   Int     @db.SmallInt
   teleopHubMisses   Int     @db.SmallInt
-  teleopLevel       Int     @db.SmallInt
-  teleopClimbFailed Boolean
   teleopPasses      Int     @db.SmallInt
   teleopDefended    Boolean
+  teleopWasDefended Boolean
+  teleopNotes       String  @db.VarChar(400)
 
-  endgameNotes       String  @db.VarChar(400)
   endgameLevel       Int     @db.SmallInt
   endgameClimbFailed Boolean
+  endgameNotes       String  @db.VarChar(400)
+
+  @@unique([matchNumber, teamNumber])
 }
 
 enum MatchType {
@@ -69,14 +73,73 @@ enum MatchType {
   PLAYOFF
 }
 
+enum Alliance {
+  RED
+  BLUE
+}
+
 enum StartingPosition {
   LEFT
+  LEFT_BUMP
+  LEFT_TRENCH
   CENTER
   RIGHT
+  RIGHT_BUMP
+  RIGHT_TRENCH
 }
 
 enum AutoClimb {
   NONE
   LEVEL1
   FAILED
+}
+
+model PitReport {
+  id           Int           @id @default(autoincrement())
+  eventCode    String        @db.Char(5)
+  teamNumber   Int           @db.SmallInt
+  drivetrain   Drivetrain
+  shooter      Shooter
+  drumShooter  Boolean
+  estimatedBps Decimal
+  driverEvents Int           @db.SmallInt
+  weightLbs    Decimal
+  widthIn      Decimal
+  lengthIn     Decimal
+  canFerry     Boolean
+  climbLevel   Int           @db.SmallInt
+  autoPaths    AutoRoutine[]
+  notes        String        @db.VarChar(400)
+  photoId      String        @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+}
+
+enum Drivetrain {
+  SWERVE
+  TANK
+  MECANUM
+}
+
+enum Shooter {
+  SINGLE
+  DUAL
+  TRIPLE
+  TURRET
+}
+
+model AutoRoutine {
+  id               Int              @id @default(autoincrement())
+  report           PitReport        @relation(fields: [reportId], references: [id])
+  reportId         Int
+  startingPosition StartingPosition
+  actions          AutoAction[]
+}
+
+enum AutoAction {
+  COLLECT_DEPOT
+  COLLECT_NEUTRAL
+  COLLECT_OUTPOST
+  CROSS_BUMP
+  CROSS_TRENCH
+  SHOOT
+  CLIMB
 }

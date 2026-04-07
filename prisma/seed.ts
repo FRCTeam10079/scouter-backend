@@ -1,5 +1,5 @@
 import * as argon2 from "@node-rs/argon2";
-import * as testUser from "test/user";
+import * as testUser from "@test-user";
 import db from "@/db";
 
 const testUserData = {
@@ -18,6 +18,7 @@ try {
       passwordHash: testUserData.passwordHash,
       firstName: testUserData.firstName,
       lastName: testUserData.lastName,
+      avatarId: null,
     },
   });
 

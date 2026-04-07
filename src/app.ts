@@ -17,6 +17,7 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import auth, { authenticate } from "./auth";
+import img from "./img";
 import report from "./report";
 import user from "./user";
 
@@ -27,6 +28,7 @@ type App = FastifyInstance<
   FastifyBaseLogger,
   ZodTypeProvider
 >;
+
 export type { App as default };
 
 export async function createApp(logger: Logger): Promise<App> {
@@ -49,6 +51,7 @@ export async function createApp(logger: Logger): Promise<App> {
   }
 
   await app.register(auth);
+  await app.register(img);
   await app.register(report);
   await app.register(user);
 

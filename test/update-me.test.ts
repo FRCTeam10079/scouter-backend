@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import path from "node:path";
 import { after, test } from "node:test";
-import * as testUser from "test/user";
+import * as testUser from "@test-user";
 import { createApp, Logger } from "@/app";
 import * as auth from "@/auth/schemas";
 import db from "@/db";
@@ -12,7 +11,6 @@ const NEW_FIRST_NAME = "Kiet";
 
 const app = await createApp(Logger.TEST);
 const userId = await testUser.id();
-const avatarPath = path.join("avatars", String(userId));
 
 test("PATCH /me updates the user", async () => {
   // `app.inject()` doesn't work for some reason, so a real server has to be
@@ -25,10 +23,9 @@ test("PATCH /me updates the user", async () => {
   formData.set("firstName", NEW_FIRST_NAME);
   formData.set(
     "avatar",
-    new Blob(
-      [fs.readFileSync(path.join(import.meta.dirname, "chelsea.webp"))],
-      { type: "image/webp" },
-    ),
+    new Blob([fs.readFileSync(`${import.meta.dirname}/chelsea.webp`)], {
+      type: "image/webp",
+    }),
   );
 
   const response = await fetch(`http://localhost:${PORT}/me`, {
@@ -39,13 +36,17 @@ test("PATCH /me updates the user", async () => {
   assert.strictEqual(response.status, 204);
   const user = await db.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { firstName: true, passwordHash: true },
+    select: { firstName: true, passwordHash: true, avatarId: true },
   });
   assert.strictEqual(user.firstName, NEW_FIRST_NAME);
-  assert(fs.existsSync(avatarPath));
+  assert(fs.existsSync(`img/${user.avatarId}`));
 });
 
 after(async () => {
-  fs.rmSync(avatarPath, { force: true });
+  const user = await db.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { avatarId: true },
+  });
+  fs.rmSync(`img/${user.avatarId}`, { force: true });
   return app.close();
 });

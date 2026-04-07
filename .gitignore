@@ -1,7 +1,8 @@
-/avatars
+/img
 /node_modules
 /src/db/prisma
 /build
+/.idea
 .env*
 *.log
 .DS_Store
