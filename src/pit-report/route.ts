@@ -107,7 +107,7 @@ export default async function route(app: App) {
       const parsedRoutine = JSON.parse(routine);
       const routineResult = pitReport.AutoRoutine.safeParse(parsedRoutine);
       if (routineResult.error) {
-        return reply.status(400).send({ code: "INVALID_FORM_DATA" });
+        return reply.status(422).send({ code: "INVALID_FORM_DATA" });
       }
       autoRoutines.push(routineResult.data);
     }

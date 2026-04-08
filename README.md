@@ -95,7 +95,7 @@ type Schema = {
 
 ### PATCH /me
 
-Updates the user's profile and settings. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 400 status code is returned with `code` set to `INVALID_FORM_DATA`. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 204 status code is returned. The following schema is used for form data:
+Updates the user's profile and settings. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 422 status code is returned with `code` set to `INVALID_FORM_DATA`. If the account has been deleted, a 410 status code is returned with `code` set to `DELETED_ACCOUNT`. Upon success, a 204 status code is returned. The following schema is used for form data:
 ```ts
 type Schema = {
   username?: string; // 1-30 characters
@@ -371,7 +371,7 @@ Returns a pit scouting report. `id` must be a positive integer. If the report do
 
 #### POST /pit-report
 
-Creates a pit scouting report. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 400 status code is returned with `code` set to `INVALID_FORM_DATA`. Upon success, a 201 status code is returned. The following schema is used for form data:
+Creates a pit scouting report. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 422 status code is returned with `code` set to `INVALID_FORM_DATA`. Upon success, a 201 status code is returned. The following schema is used for form data:
 ```ts
 type Schema = {
   createdAt: string; // ISO 8601 date-time

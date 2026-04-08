@@ -1,9 +1,11 @@
-import { execSync } from "node:child_process";
-import { exec } from "node:child_process/promises";
+import { exec, execSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import { mkdir } from "node:fs/promises";
 import readline from "node:readline/promises";
+import { promisify } from "node:util";
+
+const execAsync = promisify(exec);
 
 const isProduction = process.argv.includes("--prod");
 
@@ -11,11 +13,11 @@ console.log("Setting up...");
 
 async function installPackages() {
   try {
-    await exec("pnpm -v");
+    await execAsync("pnpm -v");
   } catch {
-    await exec("npm install -g pnpm");
+    await execAsync("npm install -g pnpm");
   }
-  await exec("pnpm install");
+  await execAsync("pnpm install");
 }
 
 const createImgFolder = mkdir("img");

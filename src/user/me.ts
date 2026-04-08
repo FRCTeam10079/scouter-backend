@@ -80,7 +80,7 @@ export default async function route(app: App) {
     }
     const dataResult = Update.safeParse(parts);
     if (dataResult.error) {
-      return reply.status(400).send({ code: "INVALID_FORM_DATA" });
+      return reply.status(422).send({ code: "INVALID_FORM_DATA" });
     }
     const data = dataResult.data;
     await db.$transaction(async (tx) => {
