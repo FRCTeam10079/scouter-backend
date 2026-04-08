@@ -5,7 +5,7 @@ export const Password = z.string().min(1).max(50);
 export const Name = z.string().min(1).max(50);
 
 export const Display = z.object({
-  id: z.int().nonnegative(),
+  id: z.int().positive(),
   firstName: Name,
   lastName: Name,
   avatarId: z.union([z.uuidv4(), z.null()]),

@@ -4,14 +4,10 @@ import { pipeline } from "node:stream/promises";
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import {
-  AutoAction,
-  Drivetrain,
-  Shooter,
-  StartingPosition,
-} from "@/db/generated/enums";
+import { Drivetrain, Shooter } from "@/db/generated/enums";
 import * as report from "@/report/schemas";
 import { CoercedInt, Response4xx } from "@/schemas";
+import * as pitReport from "./schemas";
 
 const Creation = z.object({
   createdAt: z.iso.datetime(),
@@ -19,7 +15,10 @@ const Creation = z.object({
   teamNumber: report.CoercedTeamNumber,
   drivetrain: z.enum(Drivetrain),
   shooter: z.enum(Shooter),
-  estimatedBps: z.coerce.number<string>().positive(),
+  estimatedBps: z.union([
+    z.coerce.number<string>().positive(),
+    z.string().length(0),
+  ]),
   hopperCapacity: CoercedInt.positive(),
   climbLevel: report.CoercedLevel,
   canPass: z.coerce.boolean<string>(),
@@ -39,22 +38,50 @@ const Creation = z.object({
   ]),
 });
 
-const AutoRoutine = z.object({
-  startingPosition: z.enum(StartingPosition),
-  actions: z.array(z.enum(AutoAction)),
-  expectedHubScores: z.int().nonnegative(),
-});
-
-type AutoRoutine = z.infer<typeof AutoRoutine>;
+const GetSchema = {
+  params: z.object({
+    id: CoercedInt.positive(),
+  }),
+  response: {
+    200: pitReport.Report,
+    404: Response4xx,
+  },
+};
 
 const PostSchema = {
   response: {
-    204: z.null(),
+    201: z.null(),
     "4xx": Response4xx,
   },
 };
 
 export default async function route(app: App) {
+  app.get("/pit-report/:id", { schema: GetSchema }, async (req, reply) => {
+    const report = await db.pitReport.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarId: true,
+          },
+        },
+        autoRoutines: true,
+      },
+    });
+    if (!report) {
+      return reply.code(404).send({ code: "REPORT_NOT_FOUND" });
+    }
+    return {
+      ...report,
+      createdAt: report.createdAt.toISOString(),
+      estimatedBps: report.estimatedBps ? report.estimatedBps.toNumber() : null,
+      weightLbs: report.weightLbs.toNumber(),
+    };
+  });
+
   app.post("/pit-report", { schema: PostSchema }, async (req, reply) => {
     // Convert the request parts into a format that Zod can parse.
     const parts: Record<string, unknown> = {};
@@ -75,9 +102,10 @@ export default async function route(app: App) {
     }
     const data = dataResult.data;
     // Parse the AUTO routines.
-    const autoRoutines: AutoRoutine[] = [];
+    const autoRoutines: pitReport.AutoRoutine[] = [];
     for (const routine of data.autoRoutines) {
-      const routineResult = AutoRoutine.safeParse(JSON.parse(routine));
+      const parsedRoutine = JSON.parse(routine);
+      const routineResult = pitReport.AutoRoutine.safeParse(parsedRoutine);
       if (routineResult.error) {
         return reply.status(400).send({ code: "INVALID_FORM_DATA" });
       }
@@ -91,8 +119,10 @@ export default async function route(app: App) {
       }
       await tx.pitReport.create({
         data: {
-          user: { connect: { id: req.user.id } },
           ...data,
+          user: { connect: { id: req.user.id } },
+          estimatedBps:
+            typeof data.estimatedBps === "string" ? null : data.estimatedBps,
           autoRoutines: { create: autoRoutines },
           photoId,
         },

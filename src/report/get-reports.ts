@@ -2,6 +2,7 @@ import z from "zod";
 import type App from "@/app";
 import db from "@/db";
 import { Alliance, AutoClimb, MatchType } from "@/db/generated/enums";
+import * as user from "@/user/schemas";
 import * as report from "./schemas";
 
 const PostSchema = {
@@ -95,16 +96,18 @@ const PostSchema = {
         climbFailed: z.boolean().optional(),
       })
       .optional(),
-    take: z.int().nonnegative(),
+    take: z.int().positive(),
     skip: z.int().nonnegative(),
   }),
   response: {
     200: z.array(
       z.object({
-        id: z.int().nonnegative(),
+        id: z.int().positive(),
+        eventCode: report.EventCode,
         matchType: z.enum(MatchType),
         matchNumber: report.MatchNumber,
         teamNumber: report.TeamNumber,
+        user: z.union([user.Display, z.null()]),
       }),
     ),
   },
@@ -175,15 +178,24 @@ export default function route(app: App) {
         },
         endgameClimbFailed: req.body.endgame?.climbFailed,
       },
-      select: {
-        id: true,
-        matchType: true,
-        matchNumber: true,
-        teamNumber: true,
-      },
       orderBy: { createdAt: "desc" },
       take: req.body.take,
       skip: req.body.skip,
+      select: {
+        id: true,
+        eventCode: true,
+        matchType: true,
+        matchNumber: true,
+        teamNumber: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarId: true,
+          },
+        },
+      },
     });
   });
 }

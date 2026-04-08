@@ -72,7 +72,7 @@ See https://fastify.dev/docs/latest/Reference/Errors/#fst_err_validation for gen
 
 ### GET /img/:id
 
-Returns the image with `id`. `id` must be a nonnegative integer. The following schema is used for query parameters:
+Returns the image with `id`. `id` must be a version 4 UUID. The following schema is used for query parameters:
 ```ts
 type Schema = {
   width?: number, // nonnegative integer
@@ -89,7 +89,7 @@ type Schema = {
   username: string; // 1-30 characters
   firstName: string; // 1-50 characters
   lastName: string; // 1-50 characters
-  avatarId: string | null; // UUID V4
+  avatarId: string | null; // UUID v4
 };
 ```
 
@@ -115,10 +115,10 @@ Deletes the user's account. A 204 status code is always returned.
 Returns a list of users. A 200 status code is always returned with the following response body:
 ```ts
 type Schema = {
-  id: number; // nonnegative integer
+  id: number; // positive integer
   firstName: string; // 1-30 characters
   lastName: string; // 1-30 characters
-  avatarId: string | null; // UUID V4
+  avatarId: string | null; // UUID v4
 }[];
 ```
 
@@ -167,14 +167,14 @@ type ReportData = {
 
 #### GET /report/:id
 
-Returns a scouting report. `id` must be a nonnegative integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
+Returns a scouting report. `id` must be a positive integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with the following response body:
 ```ts
 type Schema = ReportData & {
   user: {
-    id: number; // nonnegative integer
+    id: number; // positive integer
     firstName: string; // 1-30 characters
     lastName: string; // 1-30 characters
-    avatarId: string | null; // UUID V4
+    avatarId: string | null; // UUID v4
   } | null;
 };
 ```
@@ -185,7 +185,7 @@ Creates a scouting report. A 201 status code is always returned. `ReportData` is
 
 #### POST /get-reports
 
-Returns a list of reports and can be filtered. The following schema request body schema is used:
+Returns a list of scouting reports and can be filtered. The following schema is used for the request body:
 ```ts
 type Schema = {
   userIds?: number[]; // nonnegative integers
@@ -249,17 +249,24 @@ type Schema = {
     };
     climbFailed?: boolean;
   };
-  take?: number; // nonnegative integer - take N reports
+  take?: number; // positive integer - take N reports
   skip?: number; // nonnegative integer - skip the first N reports
 };
 ```
 A 200 status code is always returned with the following response body:
 ```ts
 type Schema = {
-  id: number; // nonnegative integer
+  id: number; // positive integer
+  eventCode: string; // 5 characters
   matchType: "QUALIFICATION" | "PLAYOFF",
   matchNumber: number; // nonnegative integer 1-200
   teamNumber: number; // integer 1-20000
+  user: user: {
+    id: number; // positive integer
+    firstName: string; // 1-30 characters
+    lastName: string; // 1-30 characters
+    avatarId: string | null; // UUID v4
+  } | null;
 }[];
 ```
 
@@ -269,14 +276,100 @@ Returns the data for every report so it can be downloaded before an event and us
 
 #### POST /reports/data
 
-Uploads reports in bulk. This route is intended for use with the device used to collect QR codes. The following request body schema is used:
+Uploads reports in bulk. This route is intended for use with the device used to collect QR codes. The following schema is used for the request body:
 ```ts
 type Schema = (ReportData & {
-  userId: number; // nonnegative integer
+  userId: number; // positive integer
 })[];
 ```
 
-### POST /pit-report
+### Pit Reports
+
+#### Schemas
+
+```ts
+enum Drivetrain {
+  SWERVE,
+  TANK,
+  MECANUM,
+}
+
+enum Shooter {
+  SINGLE,
+  DUAL,
+  TRIPLE,
+  QUAD,
+  TURRET,
+  DUAL_TURRET,
+  DRUM,
+  OTHER,
+}
+
+enum Indexer {
+  VERTICAL,
+  SPINDEXER,
+  ROLLER,
+  BELT,
+  GRAVITY,
+}
+
+enum StartingPosition {
+  LEFT,
+  LEFT_BUMP,
+  LEFT_TRENCH,
+  CENTER,
+  RIGHT,
+  RIGHT_BUMP,
+  RIGHT_TRENCH,
+}
+
+type AutoRoutine = {
+  startingPosition: StartingPosition;
+  actions: (
+    | "COLLECT_DEPOT"
+    | "COLLECT_OUTPOST"
+    | "CROSS_LEFT_BUMP"
+    | "CROSS_LEFT_TRENCH"
+    | "CROSS_RIGHT_BUMP"
+    | "CROSS_RIGHT_TRENCH"
+    | "SHOOT"
+    | "CLIMB"
+  )[];
+  expectedHubScores: number; // nonnegative integer
+};
+
+type PitReport = {
+  user: {
+    id: number; // positive integer
+    firstName: string; // 1-30 characters
+    lastName: string; // 1-30 characters
+    avatarId: string | null; // UUID v4
+  } | null;
+  eventCode: string; // 5 characters
+  teamNumber: number; // integer 1-20000
+  drivetrain: Drivetrain;
+  shooter: Shooter;
+  indexer: Indexer;
+  estimatedBps: number; // positive
+  hopperCapacity: number; // positive integer
+  climbLevel: number; // nonnegative integer <=3
+  canPass: boolean;
+  canDefend: boolean;
+  canCrossBump: boolean;
+  canCrossTrench: boolean;
+  autoRoutines: AutoRoutine[];
+  driverEvents: number; // nonnegative integer
+  weightLbs: number; // positive integer
+  notes: string; // <=400 characters
+  photoId: string; // UUID v4
+};
+```
+
+#### GET /pit-report/:id
+
+Returns a pit scouting report. `id` must be a positive integer. If the report does not exist, a 404 status code is returned with `code` set to `REPORT_NOT_FOUND`. Upon success, a 200 status code is returned with `PitReport` for the schema.
+
+#### POST /pit-report
 
 Creates a pit scouting report. If the content type is not multipart/form-data, a 406 status code is returned with `code` set to `FST_INVALID_MULTIPART_CONTENT_TYPE`. If the form data is invalid, a 400 status code is returned with `code` set to `INVALID_FORM_DATA`. Upon success, a 201 status code is returned. The following schema is used for form data:
 ```ts
@@ -284,18 +377,10 @@ type Schema = {
   createdAt: string; // ISO 8601 date-time
   eventCode: string; // 5 characters
   teamNumber: number; // integer 1-20000
-  drivetrain: "SWERVE" | "TANK" | "MECANUM";
-  shooter:
-    | "SINGLE"
-    | "DUAL"
-    | "TRIPLE"
-    | "QUAD"
-    | "TURRET"
-    | "DUAL_TURRET"
-    | "DRUM"
-    | "OTHER";
-  indexer: "VERTICAL" | "SPINDEXER" | "ROLLER" | "BELT" | "GRAVITY";
-  estimatedBps: number; // positive
+  drivetrain: Drivetrain;
+  shooter: Shooter;
+  indexer: Indexer;
+  estimatedBps: number | string; // positive, "" for an unknown amount
   hopperCapacity: number; // positive integer
   climbLevel: number; // nonnegative integer <=3
   canPass: boolean;
@@ -304,32 +389,36 @@ type Schema = {
   canCrossTrench: boolean;
   // string - use multiple fields with the same name and serialize each one as
   // JSON
-  autoRoutines: {
-    startingPosition:
-      | "LEFT"
-      | "LEFT_BUMP"
-      | "LEFT_TRENCH"
-      | "CENTER"
-      | "RIGHT"
-      | "RIGHT_BUMP"
-      | "RIGHT_TRENCH";
-    actions: (
-      | "COLLECT_DEPOT"
-      | "COLLECT_OUTPOST"
-      | "CROSS_LEFT_BUMP"
-      | "CROSS_LEFT_TRENCH"
-      | "CROSS_RIGHT_BUMP"
-      | "CROSS_RIGHT_TRENCH"
-      | "SHOOT"
-      | "CLIMB"
-    )[];
-    expectedHubScores: number; // nonnegative integer
-  }[];
+  autoRoutines: AutoRoutine[];
   driverEvents: number; // nonnegative integer
   weightLbs: number; // positive
   notes: string; // <=400 characters
   photo: File | ""; // image, "" for no photo
 };
+```
+
+#### POST /get-pit-reports
+
+Returns a list of pit scouting reports. The following schema is used for the request body:
+```ts
+type Schema = {
+  take: number; // positive integer
+  skip: number; // nonnegative integer
+}
+```
+A 200 status code is always returned with the following response body:
+```ts
+type Schema = {
+  id: number; // positive integer
+  eventCode: string; // 5 characters
+  teamNumber: number; // integer 1-20000
+  user: {
+    id: number; // positive integer
+    firstName: string; // 1-30 characters
+    lastName: string; // 1-30 characters
+    avatarId: string | null; // UUID v4
+  } | null;
+}[]
 ```
 
 ### Authentication
@@ -338,13 +427,13 @@ All authentication routes start with **/auth**. The user's ID can be accessed by
 ```ts
 type Schema = {
   accessToken: string; // JWT
-  refreshToken: string; // UUID V4
+  refreshToken: string; // UUID v4
 };
 ```
 
 #### POST /auth/sign-up
 
-Creates an account. If the team password is not "AlexaIsOurScoutingLead!", a 401 status code is returned with `code` set to `INCORRECT_TEAM_PASSWORD`. If the username is taken, a 409 status code is returned with `code` set to `USERNAME_TAKEN`. The following request body schema is used:
+Creates an account. If the team password is not "AlexaIsOurScoutingLead!", a 401 status code is returned with `code` set to `INCORRECT_TEAM_PASSWORD`. If the username is taken, a 409 status code is returned with `code` set to `USERNAME_TAKEN`. The following schema is used for the request body:
 ```ts
 type Schema = {
   username: string; // 1-30 characters
@@ -357,7 +446,7 @@ type Schema = {
 
 #### POST /auth/login
 
-Logs the user in. If the user does not exist, a 401 status code is returned with `code` set to `NO_SUCH_USER`. If the password is incorrect, a 401 status code is returned with `code` set to `INCORRECT_PASSWORD`. The following request body schema is used:
+Logs the user in. If the user does not exist, a 401 status code is returned with `code` set to `NO_SUCH_USER`. If the password is incorrect, a 401 status code is returned with `code` set to `INCORRECT_PASSWORD`. The following schema is used for the request body:
 ```ts
 type Schema = {
   username: string; // 1-30 characters

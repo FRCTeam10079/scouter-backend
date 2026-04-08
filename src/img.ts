@@ -6,7 +6,7 @@ import { CoercedInt } from "@/schemas";
 
 const GetSchema = {
   params: z.object({
-    id: CoercedInt.nonnegative(),
+    id: z.uuidv4(),
   }),
   querystring: z.object({
     width: CoercedInt.nonnegative().optional(),

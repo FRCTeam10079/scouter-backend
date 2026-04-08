@@ -7,7 +7,7 @@ import * as report from "./schemas";
 
 const GetSchema = {
   params: z.object({
-    id: CoercedInt.nonnegative(),
+    id: CoercedInt.positive(),
   }),
   response: {
     200: report.Data.extend({
@@ -28,7 +28,7 @@ export default async function route(app: App) {
   app.get("/report/:id", { schema: GetSchema }, async (req, reply) => {
     const report = await db.report.findUnique({
       where: { id: req.params.id },
-      select: {
+      include: {
         user: {
           select: {
             id: true,
@@ -37,21 +37,6 @@ export default async function route(app: App) {
             avatarId: true,
           },
         },
-        createdAt: true,
-        eventCode: true,
-        matchType: true,
-        matchNumber: true,
-        alliance: true,
-        teamNumber: true,
-        inMatch: true,
-        notes: true,
-        minorFouls: true,
-        majorFouls: true,
-        secondsIncapacitated: true,
-        shootingConfidence: true,
-        auto: true,
-        teleop: true,
-        endgame: true,
       },
     });
     if (!report) {

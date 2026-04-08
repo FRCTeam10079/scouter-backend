@@ -27,21 +27,21 @@ model RefreshToken {
 }
 
 model Report {
-  id                   Int       @id @default(autoincrement())
-  user                 User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId               Int?
-  createdAt            DateTime
-  eventCode            String    @db.Char(5)
-  matchType            MatchType
-  matchNumber          Int       @db.SmallInt
-  alliance             Alliance
-  teamNumber           Int       @db.SmallInt
-  inMatch              Boolean
-  notes                String    @db.VarChar(400)
-  minorFouls           Int       @db.SmallInt
-  majorFouls           Int       @db.SmallInt
-  secondsIncapacitated Int       @db.SmallInt
-  shootingConfidence   Int       @db.SmallInt
+  id                 Int       @id @default(autoincrement())
+  user               User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId             Int?
+  createdAt          DateTime
+  eventCode          String    @db.Char(5)
+  matchType          MatchType
+  matchNumber        Int       @db.SmallInt
+  alliance           Alliance
+  teamNumber         Int       @db.SmallInt
+  inMatch            Boolean
+  notes              String    @db.VarChar(400)
+  minorFouls         Int       @db.SmallInt
+  majorFouls         Int       @db.SmallInt
+  secondsDead        Int       @db.SmallInt
+  shootingConfidence Int       @db.SmallInt
 
   autoHubScores Int       @db.SmallInt
   autoHubMisses Int       @db.SmallInt

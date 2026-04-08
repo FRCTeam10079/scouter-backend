@@ -10,7 +10,7 @@ const GetSchema = {
 };
 
 const PostSchema = {
-  body: z.array(report.Data.extend({ userId: z.int().nonnegative() })),
+  body: z.array(report.Data.extend({ userId: z.int().positive() })),
   response: {
     201: z.null(),
   },
@@ -19,23 +19,7 @@ const PostSchema = {
 export default async function route(app: App) {
   app.get("/reports/data", { schema: GetSchema }, async () => {
     const reports = await db.report.findMany({
-      select: {
-        createdAt: true,
-        eventCode: true,
-        matchType: true,
-        matchNumber: true,
-        alliance: true,
-        teamNumber: true,
-        notes: true,
-        inMatch: true,
-        minorFouls: true,
-        majorFouls: true,
-        secondsIncapacitated: true,
-        shootingConfidence: true,
-        auto: true,
-        teleop: true,
-        endgame: true,
-      },
+      omit: { userId: true },
     });
     return reports.map((report) => ({
       ...report,
