@@ -21,7 +21,7 @@ const PostSchema = {
   },
 };
 
-export default function route(app: App) {
+export default async function route(app: App) {
   app.post("/get-pit-reports", { schema: PostSchema }, async (req) => {
     return await db.pitReport.findMany({
       orderBy: { createdAt: "desc" },

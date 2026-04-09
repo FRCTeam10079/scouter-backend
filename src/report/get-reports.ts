@@ -113,7 +113,7 @@ const PostSchema = {
   },
 };
 
-export default function route(app: App) {
+export default async function route(app: App) {
   app.post("/get-reports", { schema: PostSchema }, async (req) => {
     return await db.report.findMany({
       where: {

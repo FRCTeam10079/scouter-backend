@@ -106,6 +106,7 @@ model PitReport {
   drivetrain     Drivetrain
   shooter        Shooter
   estimatedBps   Decimal?
+  indexer        Indexer
   hopperCapacity Int           @db.SmallInt
   climbLevel     Int           @db.SmallInt
   canPass        Boolean

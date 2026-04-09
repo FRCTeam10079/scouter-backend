@@ -75,6 +75,7 @@ CREATE TABLE "PitReport" (
     "drivetrain" "Drivetrain" NOT NULL,
     "shooter" "Shooter" NOT NULL,
     "estimatedBps" DECIMAL(65,30),
+    "indexer" "Indexer" NOT NULL,
     "hopperCapacity" SMALLINT NOT NULL,
     "climbLevel" SMALLINT NOT NULL,
     "canPass" BOOLEAN NOT NULL,

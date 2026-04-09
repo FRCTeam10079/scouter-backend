@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import sharp from "sharp";
 import z from "zod";
-import type App from "@/app";
-import { CoercedInt } from "@/schemas";
+import type App from "./app";
+import { CoercedInt } from "./schemas";
 
 const GetSchema = {
   params: z.object({

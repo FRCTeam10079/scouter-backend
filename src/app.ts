@@ -21,6 +21,7 @@ import auth, { authenticate } from "./auth";
 import img from "./img";
 import pitReport from "./pit-report";
 import report from "./report";
+import team from "./team";
 import user from "./user";
 
 type App = FastifyInstance<
@@ -58,6 +59,7 @@ export async function createApp(logger: Logger): Promise<App> {
   await app.register(img);
   await app.register(pitReport);
   await app.register(report);
+  await app.register(team);
   await app.register(user);
 
   return app;

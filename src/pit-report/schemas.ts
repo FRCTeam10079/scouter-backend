@@ -2,6 +2,7 @@ import z from "zod";
 import {
   AutoAction,
   Drivetrain,
+  Indexer,
   Shooter,
   StartingPosition,
 } from "@/db/generated/enums";
@@ -23,6 +24,7 @@ export const Report = z.object({
   drivetrain: z.enum(Drivetrain),
   shooter: z.enum(Shooter),
   estimatedBps: z.union([z.number().positive(), z.null()]),
+  indexer: z.enum(Indexer),
   hopperCapacity: z.int().positive(),
   climbLevel: report.Level,
   canPass: z.boolean(),

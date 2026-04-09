@@ -4,7 +4,7 @@ import { pipeline } from "node:stream/promises";
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import { Drivetrain, Shooter } from "@/db/generated/enums";
+import { Drivetrain, Indexer, Shooter } from "@/db/generated/enums";
 import * as report from "@/report/schemas";
 import { CoercedInt, Response4xx } from "@/schemas";
 import * as pitReport from "./schemas";
@@ -19,6 +19,7 @@ const Creation = z.object({
     z.coerce.number<string>().positive(),
     z.string().length(0),
   ]),
+  indexer: z.enum(Indexer),
   hopperCapacity: CoercedInt.positive(),
   climbLevel: report.CoercedLevel,
   canPass: z.coerce.boolean<string>(),

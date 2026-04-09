@@ -75,8 +75,8 @@ See https://fastify.dev/docs/latest/Reference/Errors/#fst_err_validation for gen
 Returns the image with `id`. `id` must be a version 4 UUID. The following schema is used for query parameters:
 ```ts
 type Schema = {
-  width?: number, // nonnegative integer
-  height?: number, // nonnegative integer
+  width?: number; // nonnegative integer
+  height?: number; // nonnegative integer
 };
 ```
 If one dimension is specified but not the other, the other dimension will be scaled automatically. If the image does not exist, a 404 status code is returned with `code` set to `IMAGE_NOT_FOUND`. Upon success, a 200 status code is returned with a WebP image. See https://reactnative.dev/docs/image#gif-and-webp-support-on-android for supporting WebP with React Native on android.
@@ -120,6 +120,64 @@ type Schema = {
   lastName: string; // 1-30 characters
   avatarId: string | null; // UUID v4
 }[];
+```
+
+### GET /team/:number
+
+Returns statistics about a team. `number` must be an integer between 1 and 20000. `eventCode` is a required query parameter to specify the event. A 200 status code is always returned with the following response body:
+```ts
+type Schema = {
+  hub: {
+    scores: {
+      avg: number | null; // nonnegative
+      stdev: number | null; // nonnegative
+    };
+    avgAccuracy: number | null; // nonnegative
+  };
+  passes: {
+    avg: number | null; // nonnegative
+    stdev: number | null; // nonnegative
+  };
+  auto: {
+    avgHubscores: number | null; // nonnegative
+    avgLevel: number | null; // nonnegative <=1
+    avgPasses: number | null; // nonnegative
+  };
+  teleop: {
+    hubScores: {
+      avg: number | null; // nonnegative
+      stdev: number | null; // nonnegative
+      avgWhenDefended: number | null; // nonnegative
+    };
+    passes: {
+      avg: number | null; // nonnegative
+      stdev: number | null; // nonnegative
+    };
+    avgDefended: number | null; // nonnegative <=1 - display as percentage
+  };
+  avgEndgameLevel: number | null; // nonnegative <=3
+  avgMinorFouls: number | null; // nonnegative
+  avgMajorFouls: number | null; // nonnegative
+  matchesIn: number | null; // nonnegative
+  matchesMissed: number | null; // nonnegative
+  matchesIncapacitated: number | null; // nonnegative
+  entireMatchesIncapacitated: number | null; // nonnegative
+  drivetrain: Drivetrain | null;
+  shooter: Shooter | null;
+  indexer: Indexer | null;
+  climbLevel: number | null; // nonnegative <=3
+  driverEvents: number | null; // nonnegative
+  weightLbs: number | null; // nonnegative
+  epa: {
+    total: number;
+    auto: number;
+    autoHub: number;
+    autoTower: number;
+    teleop: number;
+    teleopHub: number;
+    endgameTower: number;
+  } | null;
+};
 ```
 
 ### Reports
@@ -349,8 +407,8 @@ type PitReport = {
   teamNumber: number; // integer 1-20000
   drivetrain: Drivetrain;
   shooter: Shooter;
-  indexer: Indexer;
   estimatedBps: number; // positive
+  indexer: Indexer;
   hopperCapacity: number; // positive integer
   climbLevel: number; // nonnegative integer <=3
   canPass: boolean;
@@ -379,8 +437,8 @@ type Schema = {
   teamNumber: number; // integer 1-20000
   drivetrain: Drivetrain;
   shooter: Shooter;
-  indexer: Indexer;
   estimatedBps: number | string; // positive, "" for an unknown amount
+  indexer: Indexer;
   hopperCapacity: number; // positive integer
   climbLevel: number; // nonnegative integer <=3
   canPass: boolean;
