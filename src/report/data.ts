@@ -1,6 +1,6 @@
 import z from "zod";
 import type App from "@/app";
-import db from "@/db";
+import db, { reports } from "@/db";
 import * as report from "./schemas";
 
 const GetSchema = {
@@ -18,19 +18,16 @@ const PostSchema = {
 
 export default async function route(app: App) {
   app.get("/reports/data", { schema: GetSchema }, async () => {
-    const reports = await db.report.findMany({
-      omit: { userId: true },
+    const reports = await db.query.reports.findMany({
+      columns: { userId: false },
     });
-    return reports.map((report) => ({
-      ...report,
-      createdAt: report.createdAt.toISOString(),
-    }));
+    return reports.map((r) => report.dbToData(r));
   });
 
   app.post("/reports/data", { schema: PostSchema }, async (req, reply) => {
-    await db.report.createMany({
-      data: req.body.map((r) => report.dataToDb(r, r.userId)),
-    });
+    await db
+      .insert(reports)
+      .values(req.body.map((r) => report.dataToDb(r, r.userId)));
     reply.status(201);
   });
 }

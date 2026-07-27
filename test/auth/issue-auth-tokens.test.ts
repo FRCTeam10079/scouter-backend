@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
-import * as testUser from "@test-user";
 import { createApp, Logger } from "@/app";
 import * as auth from "@/auth/schemas";
-import db from "@/db";
+import db, { testUser } from "@/db";
 
 const app = await createApp(Logger.TEST);
 
@@ -15,9 +14,9 @@ test("issueAuthTokens() returns valid authentication tokens", async () => {
   const user = app.jwt.verify<{ id: number }>(tokens.accessToken);
   assert.strictEqual(user.id, storedUserId);
 
-  const storedRefreshToken = await db.refreshToken.findUnique({
+  const storedRefreshToken = await db.query.refreshTokens.findFirst({
     where: { value: tokens.refreshToken },
-    select: { userId: true },
+    columns: { userId: true },
   });
   assert(storedRefreshToken);
   assert.strictEqual(storedRefreshToken.userId, user.id);

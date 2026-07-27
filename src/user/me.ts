@@ -3,10 +3,11 @@ import { rm as deleteFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import * as argon2 from "@node-rs/argon2";
+import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import z from "zod";
 import type App from "@/app";
-import db from "@/db";
+import db, { users } from "@/db";
 import { Response4xx } from "@/schemas";
 import * as user from "./schemas";
 
@@ -55,9 +56,9 @@ const DeleteSchema = {
 
 export default async function route(app: App) {
   app.get("/me", { schema: GetSchema }, async (req, reply) => {
-    const user = await db.user.findUnique({
+    const user = await db.query.users.findFirst({
       where: { id: req.user.id },
-      select: {
+      columns: {
         username: true,
         firstName: true,
         lastName: true,
@@ -83,10 +84,10 @@ export default async function route(app: App) {
       return reply.status(422).send({ code: "INVALID_FORM_DATA" });
     }
     const data = dataResult.data;
-    await db.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({
+    await db.transaction(async (tx) => {
+      const user = await tx.query.users.findFirst({
         where: { id: req.user.id },
-        select: { avatarId: true },
+        columns: { avatarId: true },
       });
       if (!user) {
         return reply.code(410).send({ code: "DELETED_ACCOUNT" });
@@ -119,9 +120,9 @@ export default async function route(app: App) {
           );
         }
       }
-      await tx.user.update({
-        where: { id: req.user.id },
-        data: {
+      await tx
+        .update(users)
+        .set({
           username: data.username,
           passwordHash:
             data.password !== undefined
@@ -130,20 +131,21 @@ export default async function route(app: App) {
           firstName: data.firstName,
           lastName: data.lastName,
           avatarId: newAvatarId,
-        },
-      });
+        })
+        .where(eq(users.id, req.user.id));
     });
     reply.code(204);
   });
 
   app.delete("/me", { schema: DeleteSchema }, async (req, reply) => {
-    await db.$transaction(async (tx) => {
-      const user = await tx.user.delete({
-        where: { id: req.user.id },
-        select: { avatarId: true },
-      });
-      if (user.avatarId) {
-        await deleteFile(`img/${user.avatarId}`);
+    await db.transaction(async (tx) => {
+      const user = await tx
+        .delete(users)
+        .where(eq(users.id, req.user.id))
+        .returning({ avatarId: users.avatarId });
+      const avatarId = user[0]?.avatarId;
+      if (avatarId) {
+        await deleteFile(`img/${avatarId}`);
       }
     });
     reply.code(204);

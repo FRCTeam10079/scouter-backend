@@ -1,9 +1,8 @@
 import z from "zod";
-import { Alliance, AutoClimb, MatchType } from "@/db/generated/enums";
-import type { ReportCreateInput } from "@/db/generated/models";
+import { Alliance, AutoClimb, MatchType, type reports } from "@/db";
 import { CoercedInt } from "@/schemas";
 
-export const EventCode = z.string().length(5);
+export const EventCode = z.string().length(5).toLowerCase();
 export const MatchNumber = z.int().min(1).max(200);
 export const TeamNumber = z.int().min(1).max(20000);
 export const CoercedTeamNumber = CoercedInt.min(1).max(20000);
@@ -48,21 +47,14 @@ export const Data = z.object({
 
 export type Data = z.infer<typeof Data>;
 
-export function dataToDb(data: Data, userId: number): ReportCreateInput {
+export function dataToDb(
+  data: Data,
+  userId: number,
+): typeof reports.$inferInsert {
   return {
-    user: { connect: { id: userId } },
-    createdAt: data.createdAt,
-    eventCode: data.eventCode,
-    matchType: data.matchType,
-    matchNumber: data.matchNumber,
-    alliance: data.alliance,
-    teamNumber: data.teamNumber,
-    inMatch: data.inMatch,
-    notes: data.notes,
-    minorFouls: data.minorFouls,
-    majorFouls: data.majorFouls,
-    secondsIncapacitated: data.secondsIncapacitated,
-    shootingConfidence: data.shootingConfidence,
+    ...data,
+    userId,
+    createdAt: new Date(data.createdAt),
 
     autoHubScores: data.auto.hubScores,
     autoHubMisses: data.auto.hubMisses,
@@ -80,5 +72,34 @@ export function dataToDb(data: Data, userId: number): ReportCreateInput {
     endgameLevel: data.endgame.level,
     endgameClimbFailed: data.endgame.climbFailed,
     endgameNotes: data.endgame.notes,
+  };
+}
+
+export function dbToData(
+  select: Omit<typeof reports.$inferSelect, "userId">,
+): Data {
+  return {
+    ...select,
+    createdAt: select.createdAt.toISOString(),
+    auto: {
+      hubScores: select.autoHubScores,
+      hubMisses: select.autoHubMisses,
+      climb: select.autoClimb,
+      passes: select.autoPasses,
+      notes: select.autoNotes,
+    },
+    teleop: {
+      hubScores: select.teleopHubScores,
+      hubMisses: select.teleopHubMisses,
+      passes: select.teleopPasses,
+      defended: select.teleopDefended,
+      wasDefended: select.teleopWasDefended,
+      notes: select.teleopNotes,
+    },
+    endgame: {
+      level: select.endgameLevel,
+      climbFailed: select.endgameClimbFailed,
+      notes: select.endgameNotes,
+    },
   };
 }

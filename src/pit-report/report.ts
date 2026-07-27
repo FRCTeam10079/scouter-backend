@@ -3,10 +3,10 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import z from "zod";
 import type App from "@/app";
-import db from "@/db";
-import { Drivetrain, Indexer, Shooter } from "@/db/generated/enums";
+import db, { pitReports } from "@/db";
+import { Drivetrain, Indexer, Shooter } from "@/db/enums";
 import * as report from "@/report/schemas";
-import { CoercedInt, Response4xx } from "@/schemas";
+import { CoercedInt, PositiveDecimal, Response4xx } from "@/schemas";
 import * as pitReport from "./schemas";
 
 const Creation = z.object({
@@ -15,10 +15,7 @@ const Creation = z.object({
   teamNumber: report.CoercedTeamNumber,
   drivetrain: z.enum(Drivetrain),
   shooter: z.enum(Shooter),
-  estimatedBps: z.union([
-    z.coerce.number<string>().positive(),
-    z.string().length(0),
-  ]),
+  estimatedBps: z.union([PositiveDecimal, z.string().length(0)]),
   indexer: z.enum(Indexer),
   hopperCapacity: CoercedInt.positive(),
   climbLevel: report.CoercedLevel,
@@ -28,7 +25,7 @@ const Creation = z.object({
   canCrossTrench: z.coerce.boolean<string>(),
   autoRoutines: z.array(z.string()),
   driverEvents: CoercedInt.nonnegative(),
-  weightLbs: z.coerce.number<string>().positive(),
+  weightLbs: PositiveDecimal,
   notes: z.string(),
   photo: z.union([
     z.object({
@@ -58,11 +55,11 @@ const PostSchema = {
 
 export default async function route(app: App) {
   app.get("/pit-report/:id", { schema: GetSchema }, async (req, reply) => {
-    const report = await db.pitReport.findUnique({
+    const report = await db.query.pitReports.findFirst({
       where: { id: req.params.id },
-      include: {
+      with: {
         user: {
-          select: {
+          columns: {
             id: true,
             firstName: true,
             lastName: true,
@@ -78,8 +75,6 @@ export default async function route(app: App) {
     return {
       ...report,
       createdAt: report.createdAt.toISOString(),
-      estimatedBps: report.estimatedBps ? report.estimatedBps.toNumber() : null,
-      weightLbs: report.weightLbs.toNumber(),
     };
   });
 
@@ -112,21 +107,17 @@ export default async function route(app: App) {
       }
       autoRoutines.push(routineResult.data);
     }
-    await db.$transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       let photoId: string | undefined;
       if (typeof data.photo !== "string") {
         photoId = crypto.randomUUID();
         await pipeline(data.photo.file, fs.createWriteStream(`img/${photoId}`));
       }
-      await tx.pitReport.create({
-        data: {
-          ...data,
-          user: { connect: { id: req.user.id } },
-          estimatedBps:
-            typeof data.estimatedBps === "string" ? null : data.estimatedBps,
-          autoRoutines: { create: autoRoutines },
-          photoId,
-        },
+      await tx.insert(pitReports).values({
+        ...data,
+        createdAt: new Date(data.createdAt),
+        userId: req.user.id,
+        photoId,
       });
     });
     reply.code(201);

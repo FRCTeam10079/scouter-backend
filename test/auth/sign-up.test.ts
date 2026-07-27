@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import * as argon2 from "@node-rs/argon2";
-import * as testUser from "@test-user";
 import { createApp, Logger } from "@/app";
-import { TEAM_PASSWORD } from "@/auth/route";
-import db from "@/db";
+import { TEAM_PASSWORD } from "@/auth/auth";
+import db, { testUser } from "@/db";
 
 const NEW_USER = {
   username: "mr.snuggles",
@@ -23,7 +22,7 @@ describe("POST /auth/sign-up", () => {
       body: { ...NEW_USER, teamPassword: TEAM_PASSWORD },
     });
     assert.strictEqual(response.statusCode, 201);
-    const user = await db.user.findUnique({
+    const user = await db.query.users.findFirst({
       where: { username: NEW_USER.username },
     });
     assert(user);

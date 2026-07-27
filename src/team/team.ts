@@ -1,9 +1,21 @@
-import type { Decimal } from "@prisma/client/runtime/client";
+import {
+  and,
+  avg,
+  eq,
+  getColumns,
+  gt,
+  lt,
+  not,
+  type SQL,
+  sql,
+  sum,
+} from "drizzle-orm";
 import z from "zod";
-import { Drivetrain, Indexer, Shooter } from "@/db/generated/enums";
-import type App from "./app";
-import db from "./db";
-import * as report from "./report/schemas";
+import db, { AutoClimb, reports } from "@/db";
+import { Drivetrain, Indexer, Shooter } from "@/db/enums";
+import { PositiveDecimal } from "@/schemas";
+import type App from "../app";
+import * as report from "../report/schemas";
 
 const StatboticsTeamEvent = z.object({
   // biome-ignore-start lint/style/useNamingConvention: Statbotics naming convention
@@ -45,15 +57,6 @@ type Stats = {
   matchesMissed: number | null;
   matchesIncapacitated: number | null;
   entireMatchesIncapacitated: number | null;
-};
-
-type Robot = {
-  drivetrain: Drivetrain | null;
-  shooter: Shooter | null;
-  indexer: Indexer | null;
-  climbLevel: number | null;
-  driverEvents: number | null;
-  weightLbs: Decimal | null;
 };
 
 const Epa = z.object({
@@ -117,7 +120,7 @@ const GetSchema = {
       indexer: z.union([z.enum(Indexer), z.null()]),
       climbLevel: z.union([report.Level, z.null()]),
       driverEvents: z.union([z.int().nonnegative(), z.null()]),
-      weightLbs: z.union([z.number().positive(), z.null()]),
+      weightLbs: z.union([PositiveDecimal, z.null()]),
       epa: z.union([Epa, z.null()]),
     }),
   },
@@ -125,69 +128,89 @@ const GetSchema = {
 
 export default async function route(app: App) {
   app.get("/team/:number", { schema: GetSchema }, async (req) => {
-    const [stats] = await db.$queryRaw<[Stats]>`
-SELECT
-  AVG(hub_scores) FILTER (WHERE inlier) AS "avgHubScores",
-  STDDEV_POP(hub_scores) FILTER (WHERE inlier) AS "hubScoresStdev",
-  AVG(hub_scores / NULLIF(hub_scores + hub_misses, 0)) FILTER (WHERE inlier) AS "avgHubAccuracy",
-  AVG(passes) FILTER (WHERE inlier) AS "avgPasses",
-  STDDEV_POP(passes) FILTER (WHERE inlier) AS "passesStdev",
-  AVG("autoHubScores") FILTER (WHERE inlier) AS "avgAutoHubScores",
-  AVG(("autoClimb" = 'LEVEL1')::INT) FILTER (WHERE inlier) AS "avgAutoLevel",
-  AVG("autoPasses") FILTER (WHERE inlier) AS "avgAutoPasses",
-  AVG("teleopHubScores") FILTER (WHERE inlier) AS "avgTeleopHubScores",
-  STDDEV_POP("teleopHubScores") FILTER (WHERE inlier) AS "teleopHubScoresStdev",
-  AVG("teleopHubScores") FILTER (WHERE "teleopWasDefended" AND inlier) AS "avgTeleopHubScoresWhenDefended",
-  AVG("teleopPasses") FILTER (WHERE inlier) AS "avgTeleopPasses",
-  STDDEV_POP("teleopPasses") FILTER (WHERE inlier) AS "teleopPassesStdev",
-  AVG("teleopDefended"::INT) FILTER (WHERE inlier) AS "avgTeleopDefended",
-  AVG("endgameLevel") FILTER (WHERE inlier) AS "avgEndgameLevel",
-  AVG("minorFouls") FILTER (WHERE inlier) AS "avgMinorFouls",
-  AVG("majorFouls") FILTER (WHERE inlier) AS "avgMajorFouls",
-  SUM("inMatch"::INT) AS "matchesIn",
-  SUM((NOT "inMatch")::INT) AS "matchesMissed",
-  SUM(("secondsIncapacitated" > 0)::INT) AS "matchesIncapacitated",
-  SUM(("secondsIncapacitated" = 150)::INT) AS "entireMatchesIncapacitated"
-FROM (
-  SELECT
-    *,
-    "autoHubScores" + "teleopHubScores" AS hub_scores,
-    "autoHubMisses" + "teleopHubMisses" AS hub_misses,
-    "autoPasses" + "teleopPasses" AS passes,
-    -- A match is 150 seconds.
-    "inMatch" AND "secondsIncapacitated" <> 150 AS inlier
-  FROM "Report"
-)
-WHERE "teamNumber" = ${req.params.number}
-  AND "eventCode" = ${req.query.eventCode}
-`;
+    const base = db
+      .select({
+        ...getColumns(reports),
+        hubScores:
+          sql<number>`${reports.autoHubScores} + ${reports.teleopHubScores}`.as(
+            "hub_scores",
+          ),
+        hubMisses:
+          sql<number>`${reports.autoHubMisses} + ${reports.teleopHubMisses}`.as(
+            "hub_misses",
+          ),
+        passes: sql<number>`${reports.autoPasses} + ${reports.teleopPasses}`.as(
+          "passes",
+        ),
+        // A match is 150 seconds
+        inlier: (
+          and(reports.inMatch, lt(reports.secondsIncapacitated, 150)) as SQL
+        ).as("inlier"),
+      })
+      .from(reports)
+      .as("base");
+    const [stats] = (await db
+      .select({
+        avgHubScores: sql<number>`${avg(base.hubScores)} FILTER (WHERE ${base.inlier})`,
+        hubScoresStdev: sql<number>`STDDEV_POP(${base.hubScores}) FILTER (WHERE ${base.inlier})`,
+        avgHubAccuracy: sql<number>`AVG(${base.hubScores} / NULLIF(${base.hubScores} + ${base.hubMisses}, 0)) FILTER WHERE (inlier)`,
+        avgPasses: sql<number>`${avg(base.passes)} FILTER (WHERE ${base.inlier})`,
+        passesStdev: sql<number>`STDDEV_POP(${base.passes}) FILTER (WHERE ${base.inlier})`,
+        avgAutoHubScores: sql<number>`${avg(base.autoHubScores)} FILTER (WHERE ${base.inlier})`,
+        avgAutoLevel: sql<number>`AVG(${eq(base.autoClimb, AutoClimb.Level1)}::INT) FILTER (WHERE ${base.inlier})`,
+        avgAutoPasses: sql<number>`${avg(base.autoPasses)} FILTER (WHERE ${base.inlier})`,
+        avgTeleopHubScores: sql<number>`${avg(base.teleopHubScores)} FILTER (WHERE ${base.inlier})`,
+        teleopHubScoresStdev: sql<number>`STDDEV_POP(${base.teleopHubScores}) FILTER (WHERE ${base.inlier})`,
+        avgTeleopHubScoresWhenDefended: sql<number>`${avg(base.teleopHubScores)} FILTER (WHERE ${and(base.teleopWasDefended, base.inlier)})`,
+        avgTeleopPasses: sql<number>`${avg(base.teleopPasses)} FILTER (WHERE ${base.inlier})`,
+        teleopPassesStdev: sql<number>`STDDEV_POP(${base.teleopPasses}) FILTER (WHERE ${base.inlier})`,
+        avgTeleopDefended: sql<number>`AVG(${base.teleopDefended}::INT) FILTER (WHERE ${base.inlier})`,
+        avgEndgameLevel: sql<number>`${avg(base.endgameLevel)} FILTER (WHERE ${base.inlier})`,
+        avgMinorFouls: sql<number>`${avg(base.minorFouls)} FILTER (WHERE ${base.inlier})`,
+        avgMajorFouls: sql<number>`${avg(base.majorFouls)} FILTER (WHERE ${base.inlier})`,
+        matchesIn: sum(sql<number>`${base.inMatch}::INT`),
+        matchesMissed: sum(sql<number>`${not(base.inMatch)}::INT`),
+        matchesIncapacitated: sum(
+          sql<number>`${gt(base.secondsIncapacitated, 0)}::INT`,
+        ),
+        entireMatchesIncapacitated: sum(
+          sql<number>`${eq(base.secondsIncapacitated, 150)}::INT`,
+        ),
+      })
+      .from(base)
+      .where(
+        and(
+          eq(base.teamNumber, req.params.number),
+          eq(base.eventCode, req.query.eventCode),
+        ),
+      )) as [Stats];
 
-    let [robot] = await db.$queryRaw<[Robot] | []>`
-SELECT
-  drivetrain,
-  shooter,
-  indexer,
-  "climbLevel",
-  "driverEvents",
-  "weightLbs"
-FROM "PitReport"
-WHERE "teamNumber" = ${req.params.number}
-  AND "eventCode" = ${req.query.eventCode}
-LIMIT 1
-`;
-    if (!robot) {
-      robot = {
-        drivetrain: null,
-        shooter: null,
-        indexer: null,
-        climbLevel: null,
-        driverEvents: null,
-        weightLbs: null,
-      };
-    }
+    const dbPitInfo = await db.query.pitReports.findFirst({
+      where: {
+        teamNumber: req.params.number,
+        eventCode: req.query.eventCode,
+      },
+      orderBy: { createdAt: "desc" },
+      columns: {
+        drivetrain: true,
+        shooter: true,
+        indexer: true,
+        climbLevel: true,
+        driverEvents: true,
+        weightLbs: true,
+      },
+    });
+    const pitInfo = dbPitInfo ?? {
+      drivetrain: null,
+      shooter: null,
+      indexer: null,
+      climbLevel: null,
+      driverEvents: null,
+      weightLbs: null,
+    };
 
     let epa: Epa | null = null;
-    const statboticsUrl = `https://api.statbotics.io/v3/team_event/${req.params.number}/2026${req.query.eventCode.toLowerCase()}`;
+    const statboticsUrl = `https://api.statbotics.io/v3/team_event/${req.params.number}/2026${req.query.eventCode}`;
     const statboticsRes = await fetch(statboticsUrl);
     if (statboticsRes.ok) {
       const json = await statboticsRes.json();
@@ -242,8 +265,7 @@ LIMIT 1
       matchesMissed: stats.matchesMissed,
       matchesIncapacitated: stats.matchesIncapacitated,
       entireMatchesIncapacitated: stats.entireMatchesIncapacitated,
-      ...robot,
-      weightLbs: robot.weightLbs ? robot.weightLbs.toNumber() : null,
+      ...pitInfo,
       epa,
     };
   });

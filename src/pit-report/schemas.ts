@@ -5,8 +5,9 @@ import {
   Indexer,
   Shooter,
   StartingPosition,
-} from "@/db/generated/enums";
+} from "@/db/enums";
 import * as report from "@/report/schemas";
+import { PositiveDecimal } from "@/schemas";
 import * as user from "@/user/schemas";
 
 export const AutoRoutine = z.object({
@@ -18,12 +19,12 @@ export const AutoRoutine = z.object({
 export type AutoRoutine = z.infer<typeof AutoRoutine>;
 
 export const Report = z.object({
-  user: user.Display,
+  user: z.union([user.Display, z.null()]),
   eventCode: report.EventCode,
   teamNumber: report.TeamNumber,
   drivetrain: z.enum(Drivetrain),
   shooter: z.enum(Shooter),
-  estimatedBps: z.union([z.number().positive(), z.null()]),
+  estimatedBps: z.union([PositiveDecimal, z.null()]),
   indexer: z.enum(Indexer),
   hopperCapacity: z.int().positive(),
   climbLevel: report.Level,
@@ -33,9 +34,9 @@ export const Report = z.object({
   canCrossTrench: z.boolean(),
   autoRoutines: z.array(AutoRoutine),
   driverEvents: z.int().nonnegative(),
-  weightLbs: z.number().positive(),
+  weightLbs: PositiveDecimal,
   notes: report.Notes,
-  photoId: z.union([z.uuidv4(), z.null()]),
+  photoId: z.union([z.uuidv7(), z.null()]),
 });
 
 export type Report = z.infer<typeof Report>;

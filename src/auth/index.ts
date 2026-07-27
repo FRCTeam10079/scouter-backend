@@ -6,7 +6,7 @@ declare module "@fastify/jwt" {
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type App from "@/app";
-import auth from "./route";
+import auth from "./auth";
 
 export default async function route(app: App) {
   await app.register(auth, { prefix: "/auth" });

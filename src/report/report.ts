@@ -1,6 +1,6 @@
 import z from "zod";
 import type App from "@/app";
-import db from "@/db";
+import db, { reports } from "@/db";
 import { CoercedInt, Response4xx } from "@/schemas";
 import * as user from "@/user/schemas";
 import * as report from "./schemas";
@@ -26,11 +26,11 @@ const PostSchema = {
 
 export default async function route(app: App) {
   app.get("/report/:id", { schema: GetSchema }, async (req, reply) => {
-    const report = await db.report.findUnique({
+    const r = await db.query.reports.findFirst({
       where: { id: req.params.id },
-      include: {
+      with: {
         user: {
-          select: {
+          columns: {
             id: true,
             firstName: true,
             lastName: true,
@@ -39,19 +39,14 @@ export default async function route(app: App) {
         },
       },
     });
-    if (!report) {
+    if (!r) {
       return reply.code(404).send({ code: "REPORT_NOT_FOUND" });
     }
-    return {
-      ...report,
-      createdAt: report.createdAt.toISOString(),
-    };
+    report.dbToData(r);
   });
 
   app.post("/report", { schema: PostSchema }, async (req, reply) => {
-    await db.report.create({
-      data: report.dataToDb(req.body, req.user.id),
-    });
+    await db.insert(reports).values(report.dataToDb(req.body, req.user.id));
     reply.code(201);
   });
 }

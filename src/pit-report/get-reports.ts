@@ -1,6 +1,7 @@
+import { desc } from "drizzle-orm";
 import z from "zod";
 import type App from "@/app";
-import db from "@/db";
+import db, { pitReports } from "@/db";
 import * as report from "@/report/schemas";
 import * as user from "@/user/schemas";
 
@@ -23,16 +24,18 @@ const PostSchema = {
 
 export default async function route(app: App) {
   app.post("/get-pit-reports", { schema: PostSchema }, async (req) => {
-    return await db.pitReport.findMany({
-      orderBy: { createdAt: "desc" },
-      take: req.body.take,
-      skip: req.body.skip,
-      select: {
+    return await db.query.pitReports.findMany({
+      orderBy: () => desc(pitReports.createdAt),
+      limit: req.body.take,
+      offset: req.body.skip,
+      columns: {
         id: true,
         eventCode: true,
         teamNumber: true,
+      },
+      with: {
         user: {
-          select: {
+          columns: {
             id: true,
             firstName: true,
             lastName: true,

@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { after, test } from "node:test";
-import * as testUser from "@test-user";
 import { createApp, Logger } from "@/app";
 import * as auth from "@/auth/schemas";
-import db from "@/db";
+import db, { testUser } from "@/db";
 
 const PORT = 8000;
 const NEW_FIRST_NAME = "Kiet";
@@ -34,19 +33,23 @@ test("PATCH /me updates the user", async () => {
     body: formData,
   });
   assert.strictEqual(response.status, 204);
-  const user = await db.user.findUniqueOrThrow({
+  const user = await db.query.users.findFirst({
     where: { id: userId },
-    select: { firstName: true, passwordHash: true, avatarId: true },
+    columns: { firstName: true, passwordHash: true, avatarId: true },
   });
+  assert(user);
   assert.strictEqual(user.firstName, NEW_FIRST_NAME);
   assert(fs.existsSync(`img/${user.avatarId}`));
 });
 
 after(async () => {
-  const user = await db.user.findUniqueOrThrow({
+  const user = await db.query.users.findFirst({
     where: { id: userId },
-    select: { avatarId: true },
+    columns: { avatarId: true },
   });
+  if (!user) {
+    throw new Error("Failed to find test user in database");
+  }
   fs.rmSync(`img/${user.avatarId}`, { force: true });
   return app.close();
 });

@@ -37,17 +37,11 @@ fs.writeFileSync(".env", envFileText);
 await installPackagesPromise;
 
 if (isProduction) {
-  execSync("pnpm prisma migrate deploy");
-} else {
-  execSync("pnpm prisma migrate dev");
-}
-
-execSync("pnpm prisma generate");
-
-if (isProduction) {
+  execSync("pnpm drizzle-kit generate");
+  execSync("pnpm drizzle-kit migrate");
   execSync("pnpm build");
 } else {
-  execSync("pnpm prisma db seed");
+  execSync("pnpm drizzle-kit push");
 }
 
 await createImgFolder;

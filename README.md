@@ -46,7 +46,7 @@ pnpm check
 Runs the linter and code formatter on the project without changing any files.
 
 ```
-pnpm fix
+pnpm check:fix
 ```
 Runs the linter and code formatter on the project, fixing any files that can be fixed automatically.
 
@@ -153,7 +153,7 @@ type Schema = {
       avg: number | null; // nonnegative
       stdev: number | null; // nonnegative
     };
-    avgDefended: number | null; // nonnegative <=1 - display as percentage
+    avgDefended: number | null; // nonnegative <=1 - display as a percentage
   };
   avgEndgameLevel: number | null; // nonnegative <=3
   avgMinorFouls: number | null; // nonnegative
@@ -188,9 +188,9 @@ type Schema = {
 type ReportData = {
   createdAt: string; // ISO 8601 date-time
   eventCode: string; // 5 characters
-  matchType: "QUALIFICATION" | "PLAYOFF";
+  matchType: "qualification" | "playoff";
   matchNumber: number; // integer 1-200
-  alliance: "RED" | "BLUE";
+  alliance: "red" | "blue";
   teamNumber: number; // integer 1-20000
   inMatch: boolean;
   notes: string; // <=400 characters
@@ -201,7 +201,7 @@ type ReportData = {
   auto: {
     hubScores: number; // nonnegative integer
     hubMisses: number; // nonnegative integer
-    climb: "NONE" | "LEVEL1" | "FAILED";
+    climb: "none" | "level1" | "failed";
     passes: number; // nonnegative integer
     notes: string; // <=400 characters
   };
@@ -248,9 +248,9 @@ Returns a list of scouting reports and can be filtered. The following schema is 
 type Schema = {
   userIds?: number[]; // nonnegative integers
   eventCodes?: string[]; // 5 character strings
-  matchType?: "QUALIFICATION" | "PLAYOFF";
+  matchType?: "qualification" | "playoff";
   matchNumbers?: number[]; // integers 1-200
-  alliance?: "RED" | "BLUE";
+  alliance?: "red" | "blue";
   teamNumbers?: number[]; // integers 1-20000
   inMatch?: boolean;
   minorFouls?: {
@@ -316,7 +316,7 @@ A 200 status code is always returned with the following response body:
 type Schema = {
   id: number; // positive integer
   eventCode: string; // 5 characters
-  matchType: "QUALIFICATION" | "PLAYOFF",
+  matchType: "qualification" | "playoff",
   matchNumber: number; // nonnegative integer 1-200
   teamNumber: number; // integer 1-20000
   user: user: {
@@ -347,51 +347,52 @@ type Schema = (ReportData & {
 
 ```ts
 enum Drivetrain {
-  SWERVE,
-  TANK,
-  MECANUM,
+  Swerve = "swerve",
+  Tank = "tank",
+  Mecanum = "mecanum",
 }
 
 enum Shooter {
-  SINGLE,
-  DUAL,
-  TRIPLE,
-  QUAD,
-  TURRET,
-  DUAL_TURRET,
-  DRUM,
-  OTHER,
+  Single = "single",
+  Dual = "dual",
+  Triple = "triple",
+  Quad = "quad",
+  Turret = "turret",
+  DualTurret = "dual_turret",
+  Drum = "drum",
+  Other = "other",
 }
 
 enum Indexer {
-  VERTICAL,
-  SPINDEXER,
-  ROLLER,
-  BELT,
-  GRAVITY,
+  Vertical = "vertical",
+  Spindexer = "spindexer",
+  Roller = "roller",
+  Belt = "belt",
+  Gravity = "gravity",
 }
 
-enum StartingPosition {
-  LEFT,
-  LEFT_BUMP,
-  LEFT_TRENCH,
-  CENTER,
-  RIGHT,
-  RIGHT_BUMP,
-  RIGHT_TRENCH,
+export enum AutoAction {
+  CollectDepot = "collect_depot",
+  CollectOutpost = "collect_outpost",
+  CrossLeftBump = "cross_left_bump",
+  CrossLeftTrench = "cross_left_trench",
+  CrossRightBump = "cross_right_bump",
+  CrossRightTrench = "cross_right_trench",
+  Shoot = "shoot",
+  Climb = "climb",
 }
 
 type AutoRoutine = {
   startingPosition: StartingPosition;
   actions: (
-    | "COLLECT_DEPOT"
-    | "COLLECT_OUTPOST"
-    | "CROSS_LEFT_BUMP"
-    | "CROSS_LEFT_TRENCH"
-    | "CROSS_RIGHT_BUMP"
-    | "CROSS_RIGHT_TRENCH"
-    | "SHOOT"
-    | "CLIMB"
+    | "collect_depot"
+    | "collect_outpost"
+    | "cross_left_bump"
+    | "cross_left_trench"
+    | "cross_right_bump"
+    | "cross_right_trench"
+    | "shoot"
+    | "climb"
   )[];
   expectedHubScores: number; // nonnegative integer
 };

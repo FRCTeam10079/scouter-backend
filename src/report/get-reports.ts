@@ -1,7 +1,7 @@
 import z from "zod";
 import type App from "@/app";
 import db from "@/db";
-import { Alliance, AutoClimb, MatchType } from "@/db/generated/enums";
+import { Alliance, AutoClimb, MatchType } from "@/db/enums";
 import * as user from "@/user/schemas";
 import * as report from "./schemas";
 
@@ -115,7 +115,7 @@ const PostSchema = {
 
 export default async function route(app: App) {
   app.post("/get-reports", { schema: PostSchema }, async (req) => {
-    return await db.report.findMany({
+    return db.query.reports.findMany({
       where: {
         userId: { in: req.body.userIds },
         eventCode: { in: req.body.eventCodes },
@@ -151,8 +151,8 @@ export default async function route(app: App) {
         autoClimb:
           req.body.auto?.level1 !== undefined
             ? req.body.auto.level1
-              ? AutoClimb.LEVEL1
-              : { not: AutoClimb.LEVEL1 }
+              ? AutoClimb.Level1
+              : { ne: AutoClimb.Level1 }
             : undefined,
         autoPasses: req.body.auto?.passes && {
           gte: req.body.auto.passes.min,
@@ -179,16 +179,18 @@ export default async function route(app: App) {
         endgameClimbFailed: req.body.endgame?.climbFailed,
       },
       orderBy: { createdAt: "desc" },
-      take: req.body.take,
-      skip: req.body.skip,
-      select: {
+      limit: req.body.take,
+      offset: req.body.skip,
+      columns: {
         id: true,
         eventCode: true,
         matchType: true,
         matchNumber: true,
         teamNumber: true,
+      },
+      with: {
         user: {
-          select: {
+          columns: {
             id: true,
             firstName: true,
             lastName: true,

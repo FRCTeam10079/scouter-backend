@@ -1,14 +1,15 @@
+import { lt } from "drizzle-orm";
 import cron from "node-cron";
 import { createApp, Logger } from "./app";
-import db from "./db";
+import db, { refreshTokens } from "./db";
 
 const EVERY_TUESDAY_AT_2AM = "0 2 * * TUE";
 
 if (process.env.NODE_ENV === "production") {
   cron.schedule(EVERY_TUESDAY_AT_2AM, async () => {
-    await db.refreshToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } },
-    });
+    await db
+      .delete(refreshTokens)
+      .where(lt(refreshTokens.expiresAt, new Date()));
   });
 }
 

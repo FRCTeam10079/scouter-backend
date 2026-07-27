@@ -1,13 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import z from "zod";
-import db from "@/db";
+import db, { refreshTokens } from "@/db";
 import { Response4xx } from "@/schemas";
 
-export const RefreshToken = z.uuidv4();
+export const RefreshToken = z.uuidv7();
 
 export const Tokens = z.object({
   accessToken: z.string(),
-  refreshToken: z.string(),
+  refreshToken: RefreshToken,
 });
 
 export type Tokens = z.infer<typeof Tokens>;
@@ -23,15 +23,15 @@ export async function issueTokens(
   app: FastifyInstance,
   userId: number,
 ): Promise<Tokens> {
-  const refreshToken = await db.refreshToken.create({
-    data: {
+  const refreshToken = await db
+    .insert(refreshTokens)
+    .values({
       userId,
       expiresAt: new Date(Date.now() + THIRTY_DAYS_MS),
-    },
-    select: { value: true },
-  });
+    })
+    .returning({ value: refreshTokens.value });
   return {
     accessToken: app.jwt.sign({ id: userId }, { expiresIn: "30m" }),
-    refreshToken: refreshToken.value,
+    refreshToken: refreshToken[0]?.value as string,
   };
 }

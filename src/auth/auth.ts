@@ -1,7 +1,8 @@
 import * as argon2 from "@node-rs/argon2";
+import { eq } from "drizzle-orm";
 import z from "zod";
 import type App from "@/app";
-import db from "@/db";
+import db, { refreshTokens, users } from "@/db";
 import * as user from "@/user/schemas";
 import * as auth from "./schemas";
 
@@ -40,9 +41,9 @@ const SignUpSchema = {
 
 export default function route(app: App) {
   app.post("/login", { schema: LoginSchema }, async (req, reply) => {
-    const user = await db.user.findUnique({
+    const user = await db.query.users.findFirst({
       where: { username: req.body.username },
-      select: { id: true, passwordHash: true },
+      columns: { id: true, passwordHash: true },
     });
     if (!user) {
       return reply.code(401).send({ code: "NO_SUCH_USER" });
@@ -54,14 +55,14 @@ export default function route(app: App) {
   });
 
   app.delete("/logout", { schema: LogoutSchema }, async (req, reply) => {
-    await db.refreshToken.delete({ where: { value: req.body } });
+    await db.delete(refreshTokens).where(eq(refreshTokens.value, req.body));
     reply.code(204);
   });
 
   app.post("/refresh", { schema: RefreshSchema }, async (req, reply) => {
-    const storedRefreshToken = await db.refreshToken.findUnique({
+    const storedRefreshToken = await db.query.refreshTokens.findFirst({
       where: { value: req.body },
-      select: { expiresAt: true, userId: true },
+      columns: { expiresAt: true, userId: true },
     });
     if (!storedRefreshToken) {
       return reply.status(401).send({ code: "INVALID_REFRESH_TOKEN" });
@@ -69,7 +70,7 @@ export default function route(app: App) {
     if (storedRefreshToken.expiresAt < new Date()) {
       return reply.status(401).send({ code: "EXPIRED_REFRESH_TOKEN" });
     }
-    await db.refreshToken.delete({ where: { value: req.body } });
+    await db.delete(refreshTokens).where(eq(refreshTokens.value, req.body));
     reply
       .code(201)
       .send(await auth.issueTokens(app, storedRefreshToken.userId));
@@ -79,21 +80,21 @@ export default function route(app: App) {
     if (req.body.teamPassword !== TEAM_PASSWORD) {
       return reply.code(401).send({ code: "INCORRECT_TEAM_PASSWORD" });
     }
-    const existingUser = await db.user.findUnique({
+    const existingUser = await db.query.users.findFirst({
       where: { username: req.body.username },
     });
     if (existingUser) {
       return reply.code(409).send({ code: "USERNAME_TAKEN" });
     }
-    const user = await db.user.create({
-      data: {
+    const user = await db
+      .insert(users)
+      .values({
         username: req.body.username,
         passwordHash: await argon2.hash(req.body.password),
         firstName: req.body.firstName,
         lastName: req.body.lastName,
-      },
-      select: { id: true },
-    });
-    reply.code(201).send(await auth.issueTokens(app, user.id));
+      })
+      .returning({ id: users.id });
+    reply.code(201).send(await auth.issueTokens(app, user[0]?.id as number));
   });
 }
